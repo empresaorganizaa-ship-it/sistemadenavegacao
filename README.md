@@ -1,4 +1,4 @@
-# Sistema de Acompanhamento Comercial
+# Programa Comercial VIVO — Sistema de Acompanhamento
 
 Sistema web para acompanhamento comercial de clientes (consultório de harmonização orofacial),
 com espaço isolado para cada cliente. A especificação completa está em

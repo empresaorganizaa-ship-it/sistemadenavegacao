@@ -2,7 +2,7 @@ import Image from "next/image";
 import { FormularioLogin } from "./formulario";
 import { MARCA } from "@/lib/marca";
 
-export const metadata = { title: "Entrar · Acompanhamento Comercial" };
+export const metadata = { title: "Entrar" };
 
 function Capa({ compacta = false }: { compacta?: boolean }) {
   return (

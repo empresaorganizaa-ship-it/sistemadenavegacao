@@ -3,7 +3,7 @@ import { criarClienteServidor } from "@/lib/supabase/server";
 import { sair } from "@/app/(app)/acoes-gerais";
 import { CriarEspaco } from "./criar-espaco";
 
-export const metadata = { title: "Bem-vinda · Acompanhamento Comercial" };
+export const metadata = { title: "Bem-vinda" };
 
 export default async function BemVinda() {
   const supabase = await criarClienteServidor();

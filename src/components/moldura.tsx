@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { ChevronDown, LogOut, Menu as MenuIcone, X } from "lucide-react";
 import { MENU } from "@/lib/navegacao";
 import { IconeMenu } from "./icones";
+import { MARCA } from "@/lib/marca";
 import { escolherAno, escolherWorkspace, sair } from "@/app/(app)/acoes-gerais";
 
 type Props = {
@@ -92,7 +93,7 @@ export function Moldura(p: Props) {
       <div className="min-w-0">
         <div className="truncate font-titulo text-lg leading-tight">{p.workspaceNome}</div>
         <div className="text-[11px] text-suave">
-          {p.encerrado ? "Gestão comercial" : "Acompanhamento comercial"}
+          {p.encerrado ? "Gestão comercial" : MARCA.nome}
         </div>
       </div>
     </div>

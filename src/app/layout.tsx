@@ -12,7 +12,7 @@ const fonteTitulo = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Acompanhamento Comercial",
+  title: { default: "Programa Comercial VIVO", template: "%s · Programa Comercial VIVO" },
   description: "Gestão comercial do consultório",
   robots: { index: false, follow: false },
 };

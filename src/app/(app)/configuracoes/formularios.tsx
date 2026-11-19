@@ -178,7 +178,7 @@ export function Pessoas({
   const [copiado, setCopiado] = useState(false);
 
   const textoConvite = (email: string) =>
-    `Olá! Criei o seu acesso ao nosso sistema de acompanhamento comercial. Entre em ${site} com o e-mail ${email} e toque em "Receber link de acesso". O link chega no seu e-mail.`;
+    `Olá! Criei o seu acesso ao sistema do Programa Comercial VIVO. Entre em ${site} com o e-mail ${email} e toque em "Receber link de acesso". O link chega no seu e-mail.`;
 
   return (
     <div className="flex flex-col gap-5">
