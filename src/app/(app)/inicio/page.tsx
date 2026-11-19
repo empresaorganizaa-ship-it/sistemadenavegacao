@@ -13,6 +13,7 @@ import { carregarPacientes } from "@/lib/posvenda";
 import { diasEntre, somarDias } from "@/lib/periodos";
 import { linkWhatsapp } from "@/lib/whatsapp";
 import { MessageCircle } from "lucide-react";
+import { carregarAtividade } from "@/lib/atividade";
 
 export const metadata = { title: "Início" };
 
@@ -85,6 +86,13 @@ export default async function Inicio() {
       supabase.from("conteudos").select("id, tema, status").eq("workspace_id", ws).eq("data", hojeIso).neq("status", "publicado"),
     ]);
   const etapas = (etapasRaw ?? []) as Etapa[];
+  const atividade = await carregarAtividade(supabase, ws, ctx.usuario.id, ctx.nomes);
+  const ontemIso = somarDias(hojeIso, -1);
+  const quando = (iso: string) => {
+    const d = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(iso));
+    const hora = new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+    return d === hojeIso ? `hoje, ${hora}` : d === ontemIso ? `ontem, ${hora}` : `${fData(d).slice(0, 5)}, ${hora}`;
+  };
 
   // Novidades da consultora (entregáveis), com "não lido"
   const ent = [
@@ -293,6 +301,33 @@ export default async function Inicio() {
           </ul>
         </section>
       </div>
+
+      <section className="cartao mt-6">
+        <div className="mb-3 flex items-baseline justify-between gap-2">
+          <h2 className="text-xl">Atividade recente</h2>
+          <span className="text-xs text-suave">últimos 7 dias</span>
+        </div>
+        <ul className="flex flex-col">
+          {atividade.map((a) => (
+            <li key={a.chave}>
+              <Link href={a.link} className="flex items-start gap-3 rounded-lg px-2 py-2 transition hover:bg-superficie-2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-destaque-suave text-xs font-medium text-destaque-escuro" aria-hidden>
+                  {a.pessoa.charAt(0).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <strong className="font-medium">{a.pessoa}</strong> {a.frase}
+                  <span className="block text-[11px] text-suave">{quando(a.quando)}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+          {!atividade.length && (
+            <li className="text-sm text-suave">
+              {ctx.papel === "consultora" ? "Nada novo da cliente nos últimos 7 dias." : "Nada novo da consultora nos últimos 7 dias."}
+            </li>
+          )}
+        </ul>
+      </section>
     </div>
   );
 }
