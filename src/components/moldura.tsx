@@ -83,8 +83,10 @@ export function Moldura(p: Props) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={p.logoUrl} alt="" className="size-9 rounded-lg object-contain" />
       ) : (
-        <div className="grid size-9 place-items-center rounded-lg bg-destaque font-titulo text-lg text-sobre-destaque">
-          {p.workspaceNome.charAt(0).toUpperCase()}
+        // sem logo da cliente: usa o símbolo da marca
+        <div className="grid size-9 place-items-center rounded-lg bg-destaque">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/marca/logo-branco.png" alt="" className="size-5 object-contain" />
         </div>
       )}
       <div className="min-w-0">

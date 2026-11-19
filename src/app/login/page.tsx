@@ -17,7 +17,7 @@ function Capa({ compacta = false }: { compacta?: boolean }) {
       <div className={`relative flex h-full flex-col justify-end ${compacta ? "p-6" : "p-12"}`}>
         {MARCA.logoClaro && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={MARCA.logoClaro} alt={MARCA.nome} className={`${compacta ? "mb-3 h-10" : "mb-6 h-16"} w-auto self-start`} />
+          <img src={MARCA.logoClaro} alt={MARCA.nome} className={`${compacta ? "mb-4 h-14" : "mb-8 h-28"} w-auto self-start`} />
         )}
         <h1 className={`${compacta ? "text-3xl" : "text-5xl"} leading-tight text-sobre-destaque`}>{MARCA.nome}</h1>
         <p className={`mt-2 max-w-md text-sobre-destaque/85 ${compacta ? "text-sm" : "text-base"}`}>{MARCA.frase}</p>
