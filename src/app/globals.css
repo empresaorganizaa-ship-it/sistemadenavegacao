@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/*
+ * IDENTIDADE VISUAL
+ * Todas as cores do sistema estão aqui. Para mudar a paleta, troque os
+ * valores abaixo. A cor de destaque (--destaque) também pode ser trocada
+ * por workspace em Configurações.
+ */
+:root {
+  --fundo: #faf8f5;        /* fundo da página */
+  --superficie: #ffffff;   /* cartões */
+  --superficie-2: #f3efe9; /* áreas suaves, cabeçalhos de tabela */
+  --texto: #2b2622;        /* texto principal */
+  --texto-suave: #7a716a;  /* legendas e textos secundários */
+  --borda: #e8e2da;
+  --destaque: #9c7a5b;     /* cor de destaque padrão */
+  --sucesso: #4f7a5a;
+  --alerta: #b5763a;
+  --erro: #a8443b;
+
+}
+
+/* Tons derivados da cor de destaque (recalculados quando o workspace troca a cor) */
+:root,
+.tema {
+  --destaque-suave: color-mix(in srgb, var(--destaque) 12%, white);
+  --destaque-escuro: color-mix(in srgb, var(--destaque) 80%, black);
+}
+
+@theme inline {
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-texto: var(--texto);
+  --color-suave: var(--texto-suave);
+  --color-borda: var(--borda);
+  --color-destaque: var(--destaque);
+  --color-destaque-suave: var(--destaque-suave);
+  --color-destaque-escuro: var(--destaque-escuro);
+  --color-sucesso: var(--sucesso);
+  --color-alerta: var(--alerta);
+  --color-erro: var(--erro);
+  --font-sans: var(--fonte-texto);
+  --font-titulo: var(--fonte-titulo);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--fonte-texto), system-ui, sans-serif;
+}
+
+/* números sempre alinhados na linha (a fonte de título usa números "antigos" por padrão) */
+h1, h2, h3, .font-titulo {
+  font-variant-numeric: lining-nums;
+}
+
+h1, h2, h3 {
+  font-family: var(--fonte-titulo), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Componentes reutilizáveis */
+@layer components {
+  .cartao {
+    @apply rounded-2xl border border-borda bg-superficie p-5 shadow-[0_1px_2px_rgba(43,38,34,0.04)];
+  }
+  .campo {
+    @apply w-full rounded-lg border border-borda bg-superficie px-3 py-2 text-sm text-texto outline-none transition placeholder:text-suave/70 focus:border-destaque focus:ring-2 focus:ring-destaque/20 disabled:cursor-not-allowed disabled:bg-superficie-2 disabled:text-suave;
+  }
+  .rotulo {
+    @apply mb-1 block text-xs font-medium tracking-wide text-suave uppercase;
+  }
+  .botao {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-destaque px-4 py-2 text-sm font-medium text-white transition hover:bg-destaque-escuro disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .botao-secundario {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto transition hover:border-destaque hover:text-destaque-escuro disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .botao-perigo {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-erro/30 bg-superficie px-4 py-2 text-sm font-medium text-erro transition hover:bg-erro hover:text-white disabled:opacity-50;
+  }
+  .etiqueta {
+    @apply inline-flex items-center rounded-full bg-destaque-suave px-2.5 py-0.5 text-xs font-medium text-destaque-escuro;
+  }
+}
