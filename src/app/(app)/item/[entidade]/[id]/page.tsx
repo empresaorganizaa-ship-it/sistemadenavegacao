@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { carregarContexto } from "@/lib/contexto";
 import { criarClienteServidor } from "@/lib/supabase/server";
@@ -17,6 +17,7 @@ export default async function Detalhe({ params }: { params: Promise<{ entidade: 
   const { entidade, id } = await params;
   const ent = ENTIDADES[entidade];
   if (!ent || !/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (entidade === "encontros") redirect(`/encontros/${id}`);
 
   const ctx = await carregarContexto();
   const supabase = await criarClienteServidor();

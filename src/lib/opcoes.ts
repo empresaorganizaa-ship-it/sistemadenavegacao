@@ -6,7 +6,7 @@ import type { Opcao } from "./entidades";
 export async function carregarOpcoes(
   supabase: SupabaseClient,
   ws: string,
-  quais: ("crm_colunas" | "origens_lead" | "servicos" | "leads" | "pilares_conteudo" | "referencias")[],
+  quais: ("crm_colunas" | "origens_lead" | "servicos" | "leads" | "pilares_conteudo" | "referencias" | "encontros")[],
 ): Promise<Record<string, Opcao[]>> {
   const consultas = {
     crm_colunas: () => supabase.from("crm_colunas").select("id, nome").eq("workspace_id", ws).order("ordem"),
@@ -15,6 +15,7 @@ export async function carregarOpcoes(
     leads: () => supabase.from("leads").select("id, nome").eq("workspace_id", ws).order("nome").limit(2000),
     pilares_conteudo: () => supabase.from("pilares_conteudo").select("id, nome").eq("workspace_id", ws).eq("ativo", true).order("ordem"),
     referencias: () => supabase.from("referencias").select("id, titulo").eq("workspace_id", ws).order("created_at", { ascending: false }).limit(500),
+    encontros: () => supabase.from("encontros").select("id, titulo").eq("workspace_id", ws).order("data", { ascending: false }).limit(500),
   };
   const res = await Promise.all(quais.map((q) => consultas[q]()));
   return Object.fromEntries(

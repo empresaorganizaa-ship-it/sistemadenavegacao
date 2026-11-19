@@ -128,7 +128,13 @@ export function Moldura(p: Props) {
     </div>
   );
 
-  const BARRA_INFERIOR = MENU.filter((g) => g.href && g.href !== "/configuracoes");
+  // atalhos do menu inferior no celular
+  const BARRA_INFERIOR = [
+    { href: "/inicio", titulo: "Início", icone: "inicio" },
+    { href: "/encontros", titulo: "Encontros", icone: "encontros" },
+    { href: "/comercial/crm", titulo: "CRM", icone: "comercial" },
+    { href: "/metricas", titulo: "Métricas", icone: "metricas" },
+  ];
 
   return (
     <div className="min-h-dvh lg:flex">
@@ -200,7 +206,7 @@ export function Moldura(p: Props) {
 
         {/* Menu inferior (celular) */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-borda bg-superficie pb-[env(safe-area-inset-bottom)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-borda bg-superficie pb-[env(safe-area-inset-bottom)] lg:hidden"
           aria-label="Atalhos"
         >
           {BARRA_INFERIOR.map((g) => {
@@ -212,7 +218,7 @@ export function Moldura(p: Props) {
                 className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${ativo ? "text-destaque-escuro" : "text-suave"}`}
               >
                 <IconeMenu nome={g.icone} className="size-5" />
-                {g.titulo === "Métricas comerciais" ? "Métricas" : g.titulo}
+                {g.titulo}
               </Link>
             );
           })}

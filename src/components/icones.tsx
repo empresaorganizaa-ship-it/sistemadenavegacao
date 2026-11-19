@@ -1,9 +1,10 @@
 import {
-  BarChart3, Briefcase, HeartHandshake, Home, Megaphone, Settings, Target, type LucideProps,
+  BarChart3, Briefcase, CalendarCheck, HeartHandshake, Home, Megaphone, Settings, Target, type LucideProps,
 } from "lucide-react";
 
 const MAPA = {
   inicio: Home,
+  encontros: CalendarCheck,
   metas: Target,
   metricas: BarChart3,
   marketing: Megaphone,

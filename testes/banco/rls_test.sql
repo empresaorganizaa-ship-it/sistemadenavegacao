@@ -128,6 +128,32 @@ select pg_temp.esperar((select conteudo from public.playbook_secoes where worksp
 update public.comentarios set texto = 'editado por outra' where texto = 'Amei esta seção!';
 select pg_temp.esperar((select count(*) from public.comentarios where texto = 'Amei esta seção!') = 1, 'ninguém edita comentário de outra pessoa');
 
+-- ---------- Encontros ----------
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+select pg_temp.esperar((select count(*) from public.encontros where workspace_id = :'ws_a') = 2, 'Ana vê os encontros do próprio espaço');
+select pg_temp.esperar((select count(*) from public.encontro_combinados where workspace_id = :'ws_c') = 0, 'Ana não vê combinados da Clínica C');
+do $$ begin
+  insert into public.encontros (workspace_id, titulo) values (current_setting('x.ws_a')::uuid, 'Encontro da cliente');
+  raise exception 'FALHOU: cliente criou encontro';
+exception when insufficient_privilege then raise notice 'ok - cliente não cria encontro durante o acompanhamento';
+end $$;
+update public.encontro_combinados set texto = 'mudei o combinado' where workspace_id = :'ws_a';
+select pg_temp.esperar((select count(*) from public.encontro_combinados where texto = 'mudei o combinado') = 0, 'cliente não altera o texto do combinado');
+select public.marcar_combinado(id, true) from public.encontro_combinados where workspace_id = :'ws_a' and not feito and responsavel = 'cliente' limit 1;
+select pg_temp.esperar((select count(*) from public.encontro_combinados where workspace_id = :'ws_a' and feito and feito_por = '00000000-0000-0000-0000-00000000000b') = 1, 'cliente marca combinado como feito');
+
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000c');
+do $$ begin
+  perform public.marcar_combinado((select id from public.encontro_combinados limit 1), true);
+exception when others then null;
+end $$;
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
+select pg_temp.esperar((select count(*) from public.encontro_combinados where workspace_id = :'ws_a' and feito_por = '00000000-0000-0000-0000-00000000000c') = 0, 'cliente de outro espaço não marca combinados');
+insert into public.encontros (workspace_id, titulo) values (:'ws_a', 'Encontro 3');
+insert into public.encontro_combinados (encontro_id, texto, workspace_id)
+  select id, 'Novo combinado', :'ws_c' from public.encontros where titulo = 'Encontro 3';
+select pg_temp.esperar((select workspace_id from public.encontro_combinados where texto = 'Novo combinado') = :'ws_a', 'combinado fica no espaço do encontro (mesmo se informarem outro)');
+
 -- ---------- Encerramento ----------
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
 update public.workspaces set status = 'acompanhamento_encerrado' where id = :'ws_a';

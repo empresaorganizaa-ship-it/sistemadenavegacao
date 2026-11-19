@@ -4,6 +4,7 @@ export type GrupoMenu = { titulo: string; icone: string; href?: string; itens?: 
 
 export const MENU: GrupoMenu[] = [
   { titulo: "Início", icone: "inicio", href: "/inicio" },
+  { titulo: "Encontros", icone: "encontros", href: "/encontros" },
   { titulo: "Metas", icone: "metas", href: "/metas" },
   { titulo: "Métricas comerciais", icone: "metricas", href: "/metricas" },
   {

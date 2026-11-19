@@ -39,6 +39,24 @@ const nomes = (itens: Linha[], campo: string) => {
 
 const FONTES: Fonte[] = [
   {
+    tabela: "encontros",
+    colunas: "titulo",
+    link: (r) => `/encontros/${r.id}`,
+    frase: (a, it) => `${a === "criou" ? "registrou" : "atualizou"} ${it.length === 1 ? "o encontro" : "os encontros"} ${nomes(it, "titulo")}`,
+  },
+  {
+    tabela: "encontro_combinados",
+    colunas: "texto, feito, encontro_id",
+    link: (r) => `/encontros/${r.encontro_id}`,
+    frase: (a, it) => {
+      if (a === "criou") return `combinou ${plural(it.length, "1 tarefa", "tarefas")}: ${nomes(it, "texto")}`;
+      const feitos = it.filter((i) => i.feito);
+      return feitos.length
+        ? `concluiu ${plural(feitos.length, "o combinado", "combinados")}: ${nomes(feitos, "texto")}`
+        : `atualizou ${plural(it.length, "um combinado", "combinados")}: ${nomes(it, "texto")}`;
+    },
+  },
+  {
     tabela: "leads",
     colunas: "nome",
     link: (r) => `/item/leads/${r.id}`,
@@ -181,6 +199,8 @@ const FONTES: Fonte[] = [
 
 // página da lista, quando o grupo tem vários itens
 const LISTA: Record<string, string> = {
+  encontros: "/encontros",
+  encontro_combinados: "/encontros",
   leads: "/comercial/crm",
   conteudos: "/marketing/cronograma",
   referencias: "/marketing/referencias",
@@ -228,8 +248,9 @@ export async function carregarAtividade(
   resultados.forEach((res, i) => {
     const fonte = FONTES[i];
     for (const r of (res.data ?? []) as unknown as Linha[]) {
-      // criado agora (até 1 min entre criar e a última alteração) conta como "criou"
-      const criou = new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() < 60_000;
+      // criado agora (até 1 min entre criar e a última alteração, pela mesma pessoa) conta como "criou"
+      const mesmaPessoa = !r.updated_by || r.updated_by === r.created_by;
+      const criou = mesmaPessoa && new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() < 60_000;
       const acao = criou ? "criou" : "alterou";
       const autora = criou ? r.created_by : r.updated_by;
       if (!autora || autora === euId) continue;

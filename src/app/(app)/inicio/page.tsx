@@ -72,6 +72,10 @@ export default async function Inicio() {
   const hojeIso = hoje.iso;
   const ws = ctx.workspace.id;
 
+  const [{ data: encontrosRec }, { data: combinadosPend }] = await Promise.all([
+    supabase.from("encontros").select("id, titulo, data, created_by, updated_at").eq("workspace_id", ctx.workspace.id).order("updated_at", { ascending: false }).limit(6),
+    supabase.from("encontro_combinados").select("id, texto, prazo, responsavel, encontro_id").eq("workspace_id", ctx.workspace.id).eq("feito", false).lte("prazo", somarDias(hoje.iso, 2)).order("prazo").limit(10),
+  ]);
   const [{ data: etapasRaw }, { data: analises }, { data: secoes }, { data: processos }, { data: funis }, { data: acoesCrm }, { data: tarefas }, { data: feitasHoje }, pacientes, { data: conteudosHoje }] =
     await Promise.all([
       supabase.from("etapas_acompanhamento").select("id, titulo, descricao, data_inicio, data_fim, status").eq("workspace_id", ws).order("ordem").order("data_inicio"),
@@ -96,6 +100,7 @@ export default async function Inicio() {
 
   // Novidades da consultora (entregáveis), com "não lido"
   const ent = [
+    { chave: "encontros", nome: "Encontro", itens: (encontrosRec ?? []).map((e) => ({ ...e, titulo: e.titulo })) },
     { chave: "analises_conteudo", nome: "Análise de conteúdo", itens: (analises ?? []).map((a) => ({ ...a, titulo: `${a.titulo} · ${MESES[Number(a.mes_ref.slice(5, 7)) - 1]}` })) },
     { chave: "playbook_secoes", nome: "Playbook", itens: secoes ?? [] },
     { chave: "processos", nome: "Processo", itens: (processos ?? []).map((p) => ({ ...p, titulo: p.nome })) },
@@ -234,7 +239,7 @@ export default async function Inicio() {
             {novidades.map((n) => (
               <li key={n.id}>
                 <Link
-                  href={n.chave === "playbook_secoes" ? `/comercial/playbook?s=${n.id}` : `/item/${n.chave}/${n.id}`}
+                  href={n.chave === "playbook_secoes" ? `/comercial/playbook?s=${n.id}` : n.chave === "encontros" ? `/encontros/${n.id}` : `/item/${n.chave}/${n.id}`}
                   className="flex items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-superficie-2"
                 >
                   <span className={`size-2 shrink-0 rounded-full ${naoLidas.has(n.id) ? "bg-destaque" : "bg-transparent"}`} aria-label={naoLidas.has(n.id) ? "não lido" : undefined} />
@@ -267,6 +272,20 @@ export default async function Inicio() {
               );
             })}
             {pendentesCrm.length > 6 && <li><Link href="/comercial/crm" className="text-xs text-destaque-escuro underline underline-offset-4">e mais {pendentesCrm.length - 6} no CRM</Link></li>}
+            {(combinadosPend ?? []).map((c) => {
+              const atrasado = c.prazo! < hojeIso;
+              return (
+                <li key={c.id} className="flex items-start gap-2">
+                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${atrasado ? "bg-erro" : "bg-alerta"}`} />
+                  <Link href={`/encontros/${c.encontro_id}`} className="hover:text-destaque-escuro">
+                    Combinado{c.responsavel === "consultora" ? " (consultora)" : ""}: {c.texto}
+                    <span className={`text-xs ${atrasado ? "text-erro" : "text-suave"}`}>
+                      {" "}({atrasado ? `atrasado desde ${fData(c.prazo).slice(0, 5)}` : c.prazo === hojeIso ? "prazo hoje" : `prazo ${fData(c.prazo).slice(0, 5)}`})
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
             {rotinaPendente > 0 && (
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 size-2 shrink-0 rounded-full bg-destaque" />
@@ -295,7 +314,7 @@ export default async function Inicio() {
                 </Link>
               </li>
             )}
-            {!pendentesCrm.length && !rotinaPendente && !retornos.length && !aniversariantes.length && !conteudosHoje?.length && (
+            {!pendentesCrm.length && !combinadosPend?.length && !rotinaPendente && !retornos.length && !aniversariantes.length && !conteudosHoje?.length && (
               <li className="text-suave">Tudo em dia por hoje. ✨</li>
             )}
           </ul>

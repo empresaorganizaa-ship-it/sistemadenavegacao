@@ -124,7 +124,46 @@ export const TIPOS_COLUNA: Opcao[] = [
   { valor: "outro", rotulo: "Outra etapa" },
 ];
 
+export const RESPONSAVEIS: Opcao[] = [
+  { valor: "cliente", rotulo: "Cliente" },
+  { valor: "consultora", rotulo: "Consultora" },
+  { valor: "ambas", rotulo: "As duas" },
+];
+
 const E: Entidade[] = [
+  {
+    chave: "encontros",
+    tabela: "encontros",
+    nome: "encontro",
+    artigo: "o",
+    permissao: "administrar",
+    entregavel: true,
+    comentarios: true,
+    anexos: true,
+    campos: [
+      { chave: "titulo", rotulo: "Título", tipo: "texto", obrigatorio: true, placeholder: "Ex.: Encontro 3 · Quebra de objeções" },
+      { chave: "data", rotulo: "Data do encontro", tipo: "data", obrigatorio: true, meia: true },
+      { chave: "proximo_encontro", rotulo: "Próximo encontro", tipo: "data", meia: true },
+      { chave: "resumo", rotulo: "Resumo e orientações", tipo: "markdown", textoVazio: true },
+    ],
+    campoTitulo: "titulo",
+    lista: "/encontros",
+  },
+  {
+    chave: "encontro_combinados",
+    tabela: "encontro_combinados",
+    nome: "combinado",
+    artigo: "o",
+    permissao: "administrar",
+    campos: [
+      { chave: "encontro_id", rotulo: "Encontro", tipo: "relacao", relacao: "encontros", obrigatorio: true, ocultoNoDetalhe: true },
+      { chave: "texto", rotulo: "O que foi combinado", tipo: "texto", obrigatorio: true, placeholder: "Ex.: responder os leads em até 1 hora" },
+      { chave: "responsavel", rotulo: "Quem faz", tipo: "selecao", opcoes: RESPONSAVEIS, padrao: "cliente", meia: true },
+      { chave: "prazo", rotulo: "Prazo", tipo: "data", meia: true },
+    ],
+    campoTitulo: "texto",
+    lista: "/encontros",
+  },
   {
     chave: "leads",
     tabela: "leads",
