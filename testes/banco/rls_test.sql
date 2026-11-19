@@ -71,6 +71,12 @@ select pg_temp.esperar((select count(*) from public.workspaces) = 1, 'Carla vê 
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000d');
 select pg_temp.esperar((select papel from public.workspace_membros where workspace_id = :'ws_a' and user_id = '00000000-0000-0000-0000-00000000000d') = 'cliente', 'Bruna entrou pelo convite ao criar a conta');
 
+do $$ begin
+  truncate public.metricas_mensais;
+  raise exception 'FALHOU: usuária logada conseguiu esvaziar uma tabela';
+exception when insufficient_privilege then raise notice 'ok - usuária logada não esvazia tabelas';
+end $$;
+
 -- ---------- Papéis durante o acompanhamento ----------
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
 update public.metricas_mensais set leads_novos = 77 where workspace_id = :'ws_a' and mes = 1;
@@ -104,7 +110,16 @@ select pg_temp.esperar((select count(*) from public.workspaces where id = :'ws_c
 reset role;
 set role anon;
 select set_config('request.jwt.claim.sub', '', false);
-select pg_temp.esperar((select count(*) from public.workspaces) = 0, 'sem login não vê nada');
+do $$ begin
+  perform count(*) from public.workspaces;
+  raise exception 'FALHOU: sem login conseguiu consultar';
+exception when insufficient_privilege then raise notice 'ok - sem login não acessa as tabelas';
+end $$;
+do $$ begin
+  truncate public.metricas_mensais;
+  raise exception 'FALHOU: sem login conseguiu esvaziar uma tabela';
+exception when insufficient_privilege then raise notice 'ok - sem login não esvazia tabelas';
+end $$;
 
 \o
 \echo 'TODOS OS TESTES PASSARAM'

@@ -25,10 +25,8 @@ Faça os passos na ordem.
    - **Region:** escolha **South America (São Paulo)**.
    - Clique em **Create new project** e espere uns 2 minutos.
 3. Criar as tabelas: no menu da esquerda, clique em **SQL Editor**.
-   Aqui você vai colar **3 arquivos, um de cada vez, nesta ordem**:
-   1. `supabase/migrations/20261119000001_base.sql`
-   2. `supabase/migrations/20261119000002_storage.sql`
-   3. `supabase/migrations/20261119000003_exemplo.sql`
+   Aqui você vai colar **todos os arquivos da pasta `supabase/migrations/`, um de cada vez, na
+   ordem do nome** (do menor número para o maior).
 
    Para cada um: abra o arquivo aqui no GitHub, clique no ícone de **copiar** (dois quadradinhos,
    no canto superior direito do arquivo), volte ao Supabase, clique em **+ New query**, cole
@@ -70,14 +68,16 @@ De volta ao Supabase:
    - **Site URL:** cole o endereço da Vercel (ex.: `https://sistemadenavegacao.vercel.app`)
    - **Redirect URLs:** clique em **Add URL** e cole o mesmo endereço seguido de `/**`
      (ex.: `https://sistemadenavegacao.vercel.app/**`). Salve.
-2. **Authentication → Emails** (ou *Email Templates*). Altere **dois** modelos: **Magic Link** e
+2. *(Opcional; só funciona no plano pago ou com um serviço de e-mail próprio configurado.)*
+   **Authentication → Emails** (ou *Email Templates*). Altere **dois** modelos: **Magic Link** e
    **Confirm signup**. Em cada um:
    - **Subject (assunto):** `Seu link de acesso`
    - **Body (corpo):** apague tudo e cole o conteúdo do arquivo
      [`docs/modelo-email-acesso.html`](docs/modelo-email-acesso.html). Salve.
 
-   > Por que isso? Com esse modelo, o link funciona mesmo se a pessoa pedir o acesso no computador
-   > e abrir o e-mail no celular.
+   > Por que isso? Com esse modelo, o e-mail fica em português e o link funciona mesmo se a pessoa
+   > pedir o acesso no computador e abrir o e-mail no celular. Com o modelo padrão (em inglês), o
+   > link precisa ser aberto **no mesmo navegador** em que foi pedido; se não der, use a senha.
 
 ### Passo 5 — Primeiro acesso
 

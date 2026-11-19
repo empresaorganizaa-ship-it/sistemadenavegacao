@@ -7,6 +7,12 @@
   `updated_by`, `updated_at`) com o gatilho `tg_auditoria`, RLS ativado e políticas usando
   `sou_membro`, `pode_editar_operacional` (dados do dia a dia) ou `pode_administrar`
   (entregáveis e configurações). Acrescente casos em `testes/banco/rls_test.sql`.
+- Projetos novos do Supabase NÃO dão permissões automáticas às tabelas: toda tabela nova precisa
+  de `grant select/insert/update/delete ... to authenticated` explícito (só o necessário) e nada
+  para `anon` (ver `20261119000004_permissoes.sql`).
+- Produção: Supabase `grceupgugpskqksbcjuz` (us-east-2) e Vercel `sistemadenavegacao`
+  (https://sistemadenavegacao.vercel.app, publica sozinho a cada push na `main`). Migrations
+  aplicadas ficam registradas em `supabase_migrations.schema_migrations`.
 - Migrations novas em arquivos novos (`supabase/migrations/AAAAMMDDHHMMSS_nome.sql`); nunca
   editar uma migration que já foi aplicada em produção.
 - Cores e fontes: só via tokens em `src/app/globals.css` e `src/app/layout.tsx`.

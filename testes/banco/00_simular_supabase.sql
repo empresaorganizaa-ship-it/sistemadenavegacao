@@ -14,8 +14,10 @@ create function auth.uid() returns uuid language sql stable as $$
 $$;
 grant usage on schema auth to anon, authenticated;
 grant usage on schema public to anon, authenticated;
-alter default privileges in schema public grant all on tables to anon, authenticated;
-alter default privileges in schema public grant all on functions to anon, authenticated;
+-- Como nos projetos novos do Supabase: as tabelas criadas por SQL não ganham
+-- permissões automáticas (as migrations precisam liberar explicitamente).
+-- TRUNCATE/REFERENCES/TRIGGER vêm por padrão; a migration de permissões remove.
+alter default privileges in schema public grant truncate, references, trigger on tables to anon, authenticated;
 
 create schema storage;
 create table storage.buckets (
