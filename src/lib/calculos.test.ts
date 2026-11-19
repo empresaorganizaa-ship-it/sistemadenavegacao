@@ -47,3 +47,28 @@ test("formatos de exibição", () => {
   assert.equal(data("2026-03-12"), "12/03/2026");
   assert.equal(reais(1234.5).replace(/\s/g, " "), "R$ 1.234,50");
 });
+
+import { segundaDaSemana, somarDias, diasEntre } from "./periodos.ts";
+import { preencher, numeroWhatsapp } from "./whatsapp.ts";
+
+test("períodos da rotina", () => {
+  assert.equal(segundaDaSemana("2026-11-19"), "2026-11-16"); // quinta -> segunda
+  assert.equal(segundaDaSemana("2026-11-16"), "2026-11-16");
+  assert.equal(segundaDaSemana("2026-11-22"), "2026-11-16"); // domingo
+  assert.equal(somarDias("2026-12-30", 3), "2027-01-02");
+  assert.equal(diasEntre("2026-11-01", "2026-11-19"), 18);
+});
+
+test("whatsapp e variáveis", () => {
+  assert.equal(numeroWhatsapp("(11) 98765-4321"), "5511987654321");
+  assert.equal(numeroWhatsapp("+55 11 98765-4321"), "5511987654321");
+  assert.equal(preencher("Oi, {nome}! {beneficio}", { nome: "Ana Souza", beneficio: "10%" }), "Oi, Ana! 10%");
+});
+
+import { gerarCsv, dataBr } from "./csv.ts";
+
+test("planilha CSV", () => {
+  const csv = gerarCsv(["Nome", "Valor"], [["Ana; Souza", 1234.5], ["=SOMA(A1)", null]]);
+  assert.equal(csv, '﻿Nome;Valor\r\n"Ana; Souza";1234,5\r\n\'=SOMA(A1);');
+  assert.equal(dataBr("2026-03-12"), "12/03/2026");
+});

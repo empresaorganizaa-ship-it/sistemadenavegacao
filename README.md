@@ -4,8 +4,11 @@ Sistema web para acompanhamento comercial de clientes (consultório de harmoniza
 com espaço isolado para cada cliente. A especificação completa está em
 [`SPEC-sistema-acompanhamento.md`](SPEC-sistema-acompanhamento.md).
 
-**Fase atual: 1 — Base** (login, espaços, papéis, permissões, menu, Configurações, Metas,
-Métricas comerciais e painel Início).
+**Todos os módulos estão liberados:** Início (com cronograma do acompanhamento, novidades e
+ações de hoje), Metas, Métricas comerciais, Marketing (análise de conteúdo, banco de referências,
+cronograma, métricas), Comercial (playbook, rotina, CRM, campanhas, processos e funis),
+Pós-venda (serviços e retornos, aniversariantes, indicação, modelos de mensagem), comentários,
+anexos, exportação para planilha e encerramento do acompanhamento.
 
 ---
 

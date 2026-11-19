@@ -105,7 +105,7 @@ export function GraficoSimples({
         <BarChart {...comum} barCategoryGap="25%">
           {GRADE}
           <XAxis dataKey="mes" tickFormatter={(m) => MESES_CURTOS[m - 1]} {...EIXO} />
-          <YAxis tickFormatter={eixoY} width={44} allowDecimals={false} {...EIXO} />
+          <YAxis tickFormatter={eixoY} width={formato === "porcentagem" ? 44 : 56} allowDecimals={false} {...EIXO} />
           {dica}
           <Bar dataKey="valor" name={nome} fill="var(--destaque)" radius={[4, 4, 0, 0]} maxBarSize={28} />
         </BarChart>
@@ -113,7 +113,7 @@ export function GraficoSimples({
         <LineChart {...comum}>
           {GRADE}
           <XAxis dataKey="mes" tickFormatter={(m) => MESES_CURTOS[m - 1]} {...EIXO} />
-          <YAxis tickFormatter={eixoY} width={44} {...EIXO} />
+          <YAxis tickFormatter={eixoY} width={formato === "porcentagem" ? 44 : 56} {...EIXO} />
           {dica}
           <Line
             dataKey="valor"

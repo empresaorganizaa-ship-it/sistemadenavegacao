@@ -9,7 +9,10 @@
   (entregáveis e configurações). Acrescente casos em `testes/banco/rls_test.sql`.
 - Projetos novos do Supabase NÃO dão permissões automáticas às tabelas: toda tabela nova precisa
   de `grant select/insert/update/delete ... to authenticated` explícito (só o necessário) e nada
-  para `anon` (ver `20261119000004_permissoes.sql`).
+  para `anon` (ver `20261119000004_permissoes.sql` e `20261120000003_permissoes_padrao.sql`).
+- Telas genéricas: cada tipo de registro é descrito em `src/lib/entidades.ts` (campos, permissão,
+  comentários, anexos). O formulário (`components/formulario-entidade.tsx`), a página de detalhe
+  (`/item/[entidade]/[id]`) e a ação `salvarEntidade` validam tudo por essa descrição.
 - Produção: Supabase `grceupgugpskqksbcjuz` (us-east-2) e Vercel `sistemadenavegacao`
   (https://sistemadenavegacao.vercel.app, publica sozinho a cada push na `main`). Migrations
   aplicadas ficam registradas em `supabase_migrations.schema_migrations`.

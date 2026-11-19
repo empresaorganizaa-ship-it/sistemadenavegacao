@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { dataCurta, primeiroNome } from "@/lib/formatos";
 
 export function TituloPagina({
@@ -72,22 +71,5 @@ export function SomenteLeitura() {
     <Aviso>
       Você pode ver estes dados, mas não pode editá-los.
     </Aviso>
-  );
-}
-
-export function EmBreve({ titulo, grupo, fase }: { titulo: string; grupo: string; fase: number }) {
-  return (
-    <div>
-      <TituloPagina titulo={titulo} subtitulo={grupo} />
-      <div className="cartao max-w-xl text-center">
-        <p className="font-titulo text-2xl">Em construção</p>
-        <p className="mt-2 text-sm text-suave">
-          Este módulo chega na <strong>Fase {fase}</strong> do projeto.
-        </p>
-        <Link href="/inicio" className="botao-secundario mt-5">
-          Voltar ao início
-        </Link>
-      </div>
-    </div>
   );
 }

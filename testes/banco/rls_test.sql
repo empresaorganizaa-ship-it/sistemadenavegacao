@@ -72,6 +72,11 @@ select pg_temp.entrar('00000000-0000-0000-0000-00000000000d');
 select pg_temp.esperar((select papel from public.workspace_membros where workspace_id = :'ws_a' and user_id = '00000000-0000-0000-0000-00000000000d') = 'cliente', 'Bruna entrou pelo convite ao criar a conta');
 
 do $$ begin
+  truncate public.comentarios;
+  raise exception 'FALHOU: usuária logada conseguiu esvaziar os comentários';
+exception when insufficient_privilege then raise notice 'ok - usuária logada não esvazia comentários';
+end $$;
+do $$ begin
   truncate public.metricas_mensais;
   raise exception 'FALHOU: usuária logada conseguiu esvaziar uma tabela';
 exception when insufficient_privilege then raise notice 'ok - usuária logada não esvazia tabelas';
@@ -90,6 +95,39 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok - cliente não convida durante o acompanhamento';
 end $$;
 
+-- ---------- Módulos (CRM, entregáveis, comentários) ----------
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+select pg_temp.esperar((select count(*) from public.leads) > 0, 'Ana vê os leads do próprio espaço');
+select pg_temp.esperar((select count(*) from public.leads where workspace_id = :'ws_c') = 0, 'Ana não vê leads da Clínica C');
+select pg_temp.esperar((select count(*) from public.crm_colunas where workspace_id = :'ws_c') = 0, 'Ana não vê o CRM da Clínica C');
+insert into public.leads (workspace_id, nome) values (:'ws_a', 'Lead da Ana');
+select pg_temp.esperar((select count(*) from public.leads where nome = 'Lead da Ana') = 1, 'cliente cria lead');
+update public.playbook_secoes set conteudo = 'alterado pela cliente' where workspace_id = :'ws_a';
+select pg_temp.esperar((select count(*) from public.playbook_secoes where conteudo = 'alterado pela cliente') = 0, 'cliente não edita o playbook durante o acompanhamento');
+insert into public.comentarios (workspace_id, entidade, registro_id, texto)
+  select :'ws_a', 'playbook_secoes', id, 'Amei esta seção!' from public.playbook_secoes where workspace_id = :'ws_a' limit 1;
+select pg_temp.esperar((select count(*) from public.comentarios where texto = 'Amei esta seção!') = 1, 'cliente comenta no playbook');
+insert into public.leituras (workspace_id, entidade, registro_id)
+  select :'ws_a', 'playbook_secoes', id from public.playbook_secoes where workspace_id = :'ws_a' limit 1;
+do $$ begin
+  insert into public.leads (workspace_id, nome) values (current_setting('x.ws_c')::uuid, 'Intrusa');
+  raise exception 'FALHOU: Ana criou lead na Clínica C';
+exception when insufficient_privilege then raise notice 'ok - Ana não cria lead na Clínica C';
+end $$;
+do $$ begin
+  insert into public.comentarios (workspace_id, entidade, registro_id, texto)
+  values (current_setting('x.ws_c')::uuid, 'x', gen_random_uuid(), 'oi');
+  raise exception 'FALHOU: Ana comentou na Clínica C';
+exception when insufficient_privilege then raise notice 'ok - Ana não comenta na Clínica C';
+end $$;
+
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
+select pg_temp.esperar((select count(*) from public.leituras) = 0, 'leituras são individuais (consultora não vê as da Ana)');
+update public.playbook_secoes set conteudo = 'texto da consultora' where workspace_id = :'ws_a' and ordem = 1;
+select pg_temp.esperar((select conteudo from public.playbook_secoes where workspace_id = :'ws_a' and ordem = 1) = 'texto da consultora', 'consultora edita o playbook');
+update public.comentarios set texto = 'editado por outra' where texto = 'Amei esta seção!';
+select pg_temp.esperar((select count(*) from public.comentarios where texto = 'Amei esta seção!') = 1, 'ninguém edita comentário de outra pessoa');
+
 -- ---------- Encerramento ----------
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
 update public.workspaces set status = 'acompanhamento_encerrado' where id = :'ws_a';
@@ -97,8 +135,14 @@ select pg_temp.esperar((select status from public.workspaces where id = :'ws_a')
 update public.metricas_mensais set leads_novos = 1 where workspace_id = :'ws_a' and mes = 1;
 select pg_temp.esperar((select leads_novos from public.metricas_mensais where workspace_id = :'ws_a' and mes = 1) = 77, 'consultora fica somente leitura após encerrar');
 select pg_temp.esperar((select count(*) from public.metricas_mensais where workspace_id = :'ws_a') > 0, 'consultora ainda lê após encerrar');
+update public.leads set nome = 'mudado' where workspace_id = :'ws_a';
+select pg_temp.esperar((select count(*) from public.leads where nome = 'mudado') = 0, 'consultora não edita o CRM após encerrar');
+insert into public.comentarios (workspace_id, entidade, registro_id, texto) values (:'ws_a', 'teste', gen_random_uuid(), 'ainda posso comentar');
+select pg_temp.esperar((select count(*) from public.comentarios where texto = 'ainda posso comentar') = 1, 'consultora ainda comenta após encerrar');
 
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+update public.playbook_secoes set conteudo = 'agora é minha' where workspace_id = :'ws_a' and ordem = 1;
+select pg_temp.esperar((select conteudo from public.playbook_secoes where workspace_id = :'ws_a' and ordem = 1) = 'agora é minha', 'cliente edita o playbook após encerrar');
 update public.workspaces set nome = 'Clínica da Ana' where id = :'ws_a';
 select pg_temp.esperar((select nome from public.workspaces where id = :'ws_a') = 'Clínica da Ana', 'cliente edita configurações após encerrar');
 delete from public.workspace_membros where workspace_id = :'ws_a' and user_id = '00000000-0000-0000-0000-00000000000a';
@@ -114,6 +158,11 @@ do $$ begin
   perform count(*) from public.workspaces;
   raise exception 'FALHOU: sem login conseguiu consultar';
 exception when insufficient_privilege then raise notice 'ok - sem login não acessa as tabelas';
+end $$;
+do $$ begin
+  truncate public.leads cascade;
+  raise exception 'FALHOU: sem login conseguiu esvaziar o CRM';
+exception when insufficient_privilege then raise notice 'ok - sem login não esvazia o CRM';
 end $$;
 do $$ begin
   truncate public.metricas_mensais;

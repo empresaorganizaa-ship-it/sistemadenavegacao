@@ -15,6 +15,8 @@ type Props = {
   metas: Record<number, number>;
   nomes: Record<string, string>;
   podeEditar: boolean;
+  /** números contados a partir do CRM, por mês */
+  doCrm?: Record<number, Record<string, number>>;
 };
 
 type Valores = Record<number, Record<CampoNumerico, string>>;
@@ -47,7 +49,7 @@ function lerValores(v: Record<CampoNumerico, string>): Partial<MetricaMes> {
   return r;
 }
 
-export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEditar }: Props) {
+export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEditar, doCrm = {} }: Props) {
   const inicial = useMemo(() => paraValores(dados), [dados]);
   const [valores, setValores] = useState<Valores>(inicial);
   const [base, setBase] = useState(inicial);
@@ -72,6 +74,24 @@ export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEdita
       setResultado(await salvarMetricas(ano, alterados.map((mes) => ({ mes, valores: valores[mes] }))));
     });
   }
+
+  function puxarDoCrm(mes: number) {
+    const c = doCrm[mes];
+    if (!c) return;
+    setResultado(undefined);
+    setValores((v) => ({
+      ...v,
+      [mes]: {
+        ...v[mes],
+        leads_novos: paraCampo(c.leads_novos),
+        avaliacoes_agendadas: paraCampo(c.avaliacoes_agendadas),
+        avaliacoes_realizadas: paraCampo(c.avaliacoes_realizadas),
+        vendas_fechadas: paraCampo(c.vendas_fechadas),
+        faturamento: c.faturamento ? paraCampo(c.faturamento, 2) : v[mes].faturamento,
+      },
+    }));
+  }
+  const [mesCrm, setMesCrm] = useState(mesInicial);
 
   const calc = (mes: number) => calcular(lerValores(valores[mes]), metas[mes]);
 
@@ -147,8 +167,19 @@ export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEdita
             </tbody>
           </table>
         </div>
-        <div className="border-t border-borda px-4 py-2 text-[11px] text-suave">
-          Passe o mouse sobre um mês para ver o nome completo. Valores com vírgula: 1.234,56.
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-borda px-4 py-2 text-[11px] text-suave">
+          <span>Valores com vírgula: 1.234,56.</span>
+          {podeEditar && (
+            <span className="flex items-center gap-2">
+              Preencher leads, agendamentos, avaliações, vendas e faturamento com os números do CRM em
+              <select aria-label="Mês para puxar do CRM" className="rounded border border-borda bg-superficie px-1 py-0.5 text-xs" value={mesCrm} onChange={(e) => setMesCrm(Number(e.target.value))}>
+                {MESES_LISTA.map((m) => <option key={m} value={m}>{MESES[m - 1]}</option>)}
+              </select>
+              <button type="button" className="botao-secundario px-2 py-1 text-xs" disabled={!doCrm[mesCrm]} onClick={() => puxarDoCrm(mesCrm)}>
+                Puxar do CRM
+              </button>
+            </span>
+          )}
         </div>
       </div>
 
@@ -203,6 +234,11 @@ export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEdita
               ))}
             </dl>
           </div>
+          {podeEditar && doCrm[mesAberto] && (
+            <button type="button" className="botao-secundario mt-3 w-full" onClick={() => puxarDoCrm(mesAberto)}>
+              Puxar números do CRM
+            </button>
+          )}
           <Autoria registro={dados[mesAberto]} nomes={nomes} className="mt-3" />
         </div>
       </div>

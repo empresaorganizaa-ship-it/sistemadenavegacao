@@ -62,3 +62,24 @@ export async function salvarLeadsOrigem(
   atualizar();
   return { ok: "Leads por origem salvos." };
 }
+
+export async function salvarFaturamentoProcedimento(
+  ano: number,
+  itens: { servico_id: string; mes: number; valor: string }[],
+): Promise<Resultado> {
+  const ctx = await carregarContexto();
+  if (!ctx.podeEditarOperacional) return { erro: "Você não tem permissão para editar as métricas." };
+  const linhas = [];
+  for (const i of itens) {
+    const n = lerNumero(i.valor) ?? 0;
+    if (n < 0) return { erro: "Use valores positivos." };
+    if (i.mes < 1 || i.mes > 12) return { erro: "Mês inválido." };
+    linhas.push({ workspace_id: ctx.workspace.id, servico_id: i.servico_id, ano, mes: i.mes, valor: n });
+  }
+  if (!linhas.length) return { ok: "Nada para salvar." };
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from("metricas_procedimento").upsert(linhas, { onConflict: "servico_id,ano,mes" });
+  if (error) return { erro: "Não foi possível salvar." };
+  revalidatePath("/metricas");
+  return { ok: "Faturamento por procedimento salvo." };
+}

@@ -52,17 +52,11 @@ function NavLista({ aoClicar }: { aoClicar?: () => void }) {
                   key={i.href}
                   href={i.href}
                   onClick={aoClicar}
-                  title={i.fase > 1 ? `Em construção (Fase ${i.fase})` : undefined}
                   className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition ${
-                    ativo(i.href)
-                      ? "bg-destaque-suave font-medium text-destaque-escuro"
-                      : i.fase > 1
-                        ? "text-suave hover:bg-superficie-2"
-                        : "text-texto hover:bg-superficie-2"
+                    ativo(i.href) ? "bg-destaque-suave font-medium text-destaque-escuro" : "text-texto hover:bg-superficie-2"
                   }`}
                 >
                   {i.titulo}
-                  {i.fase > 1 && <span className="size-1.5 shrink-0 rounded-full bg-borda" aria-label="em breve" />}
                 </Link>
               ))}
             </div>
