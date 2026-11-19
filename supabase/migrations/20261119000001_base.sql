@@ -28,7 +28,7 @@ create table public.workspaces (
   id uuid primary key default gen_random_uuid(),
   nome text not null check (length(trim(nome)) > 0),
   status public.status_workspace not null default 'em_acompanhamento',
-  cor_destaque text not null default '#9C7A5B' check (cor_destaque ~ '^#[0-9A-Fa-f]{6}$'),
+  cor_destaque text not null default '#C1442E' check (cor_destaque ~ '^#[0-9A-Fa-f]{6}$'),
   logo_path text,
   ano_ativo int not null default extract(year from now())::int check (ano_ativo between 2000 and 2100),
   created_by uuid references auth.users (id) on delete set null default auth.uid(),

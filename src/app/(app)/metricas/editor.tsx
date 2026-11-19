@@ -160,7 +160,7 @@ export function EditorMetricas({ ano, mesInicial, dados, metas, nomes, podeEdita
               key={m}
               onClick={() => setMesAberto(m)}
               className={`shrink-0 rounded-full border px-3 py-1 text-sm ${
-                m === mesAberto ? "border-destaque bg-destaque text-white" : "border-borda bg-superficie text-suave"
+                m === mesAberto ? "border-destaque bg-destaque text-sobre-destaque" : "border-borda bg-superficie text-suave"
               } ${alterados.includes(m) && m !== mesAberto ? "border-destaque text-destaque-escuro" : ""}`}
             >
               {MESES_CURTOS[m - 1]}

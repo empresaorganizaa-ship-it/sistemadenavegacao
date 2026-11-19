@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-// IDENTIDADE VISUAL — fontes. Troque aqui para usar outras fontes do Google Fonts.
-const fonteTexto = Inter({ variable: "--fonte-texto", subsets: ["latin"] });
+// IDENTIDADE VISUAL — fontes: Cormorant Garamond (títulos) e Source Sans (textos).
+// No Google Fonts, a Source Sans Pro hoje se chama "Source Sans 3" (mesma fonte, versão atualizada).
+const fonteTexto = Source_Sans_3({ variable: "--fonte-texto", subsets: ["latin"] });
 const fonteTitulo = Cormorant_Garamond({
   variable: "--fonte-titulo",
   subsets: ["latin"],
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#faf8f5",
+  themeColor: "#f8f4ec",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -83,7 +83,7 @@ export function Moldura(p: Props) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={p.logoUrl} alt="" className="size-9 rounded-lg object-contain" />
       ) : (
-        <div className="grid size-9 place-items-center rounded-lg bg-destaque font-titulo text-lg text-white">
+        <div className="grid size-9 place-items-center rounded-lg bg-destaque font-titulo text-lg text-sobre-destaque">
           {p.workspaceNome.charAt(0).toUpperCase()}
         </div>
       )}

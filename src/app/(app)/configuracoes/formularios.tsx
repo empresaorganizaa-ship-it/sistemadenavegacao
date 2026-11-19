@@ -16,7 +16,8 @@ function Mensagem({ r }: { r: Resultado }) {
   return null;
 }
 
-const CORES_SUGERIDAS = ["#9C7A5B", "#B08D7A", "#8C6F64", "#A3876A", "#7D8471", "#6F7D8C", "#B5838D", "#3F3A36"];
+// a primeira é a cor da marca; as outras são opções para personalizar o espaço de cada cliente
+const CORES_SUGERIDAS = ["#C1442E", "#9E3A2A", "#B5604A", "#9C7A5B", "#7D8471", "#6F7D8C", "#B5838D", "#3F3A36"];
 
 export function FormEspaco({ workspace, podeEditar }: { workspace: Workspace; podeEditar: boolean }) {
   const [r, acao, salvando] = useActionState<Resultado, FormData>(salvarEspaco, undefined);
