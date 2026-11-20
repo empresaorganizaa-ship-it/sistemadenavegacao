@@ -7,7 +7,7 @@ import { calcular, dividir, somar, type MetricaMes } from "@/lib/calculos";
 import { MESES, data as fData, hojeBrasil, inteiro, porcentagem, primeiroNome, reais } from "@/lib/formatos";
 import { metasDoAno } from "@/lib/metas";
 import type { MetaCiclo } from "@/lib/tipos";
-import { LinhaTempo, type Etapa } from "@/components/linha-tempo";
+import { QuadroCronograma, type Acao } from "@/components/quadro-cronograma";
 import { naoLidos } from "@/lib/leituras";
 import { carregarPacientes } from "@/lib/posvenda";
 import { diasEntre, somarDias } from "@/lib/periodos";
@@ -25,33 +25,6 @@ function Cartao({ rotulo, valor, detalhe, children }: { rotulo: string; valor: s
       {detalhe && <p className="text-xs text-suave">{detalhe}</p>}
       {children}
     </div>
-  );
-}
-
-function CronogramaHorizontal({ etapas }: { etapas: Etapa[] }) {
-  return (
-    <ol className="hidden lg:flex">
-      {etapas.map((e, i) => {
-        const feita = e.status === "concluida";
-        const agora = e.status === "andamento";
-        return (
-          <li key={e.id} className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-center">
-              <span className={`grid size-7 shrink-0 place-items-center rounded-full border-2 text-xs font-medium ${feita ? "border-destaque bg-destaque text-sobre-destaque" : agora ? "border-destaque bg-superficie text-destaque" : "border-borda bg-superficie text-suave"}`}>
-                {feita ? "✓" : i + 1}
-              </span>
-              {i < etapas.length - 1 && <span className={`h-0.5 flex-1 ${feita ? "bg-destaque" : "bg-borda"}`} />}
-            </div>
-            <Link href={`/item/etapas_acompanhamento/${e.id}`} className={`mt-2 pr-3 ${agora ? "font-medium text-destaque-escuro" : feita ? "text-suave" : ""}`}>
-              <span className="block text-sm leading-tight">{e.titulo}</span>
-              <span className="block text-[11px] text-suave">
-                {agora ? "Em andamento" : e.data_inicio ? fData(e.data_inicio).slice(0, 5) + (e.data_fim ? ` a ${fData(e.data_fim).slice(0, 5)}` : "") : ""}
-              </span>
-            </Link>
-          </li>
-        );
-      })}
-    </ol>
   );
 }
 
@@ -78,7 +51,7 @@ export default async function Inicio() {
   ]);
   const [{ data: etapasRaw }, { data: analises }, { data: secoes }, { data: processos }, { data: funis }, { data: acoesCrm }, { data: tarefas }, { data: feitasHoje }, pacientes, { data: conteudosHoje }] =
     await Promise.all([
-      supabase.from("etapas_acompanhamento").select("id, titulo, descricao, data_inicio, data_fim, status").eq("workspace_id", ws).order("ordem").order("data_inicio"),
+      supabase.from("etapas_acompanhamento").select("id, titulo, descricao, data_inicio, data_fim, status").eq("workspace_id", ws).order("ordem").order("data_fim", { nullsFirst: false }),
       supabase.from("analises_conteudo").select("id, titulo, mes_ref, created_by, updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false }).limit(6),
       supabase.from("playbook_secoes").select("id, titulo, conteudo, created_by, updated_at").eq("workspace_id", ws).neq("conteudo", "").order("updated_at", { ascending: false }).limit(6),
       supabase.from("processos").select("id, nome, created_by, updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false }).limit(6),
@@ -89,7 +62,7 @@ export default async function Inicio() {
       carregarPacientes(supabase, ws),
       supabase.from("conteudos").select("id, tema, status").eq("workspace_id", ws).eq("data", hojeIso).neq("status", "publicado"),
     ]);
-  const etapas = (etapasRaw ?? []) as Etapa[];
+  const etapas = (etapasRaw ?? []) as Acao[];
   const atividade = await carregarAtividade(supabase, ws, ctx.usuario.id, ctx.nomes);
   const ontemIso = somarDias(hojeIso, -1);
   const quando = (iso: string) => {
@@ -160,15 +133,14 @@ export default async function Inicio() {
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="text-xl">Cronograma do acompanhamento</h2>
             <Link href="/acompanhamento" className="text-xs text-destaque-escuro underline underline-offset-4">
-              {ctx.podeAdministrar ? "Editar" : "Ver tudo"}
+              {ctx.podeAdministrar ? "Abrir e adicionar ações" : "Ver tudo"}
             </Link>
           </div>
           {etapas.length ? (
-            <div className="lg:hidden"><LinhaTempo etapas={etapas} compacta /></div>
+            <QuadroCronograma acoes={etapas} hoje={hojeIso} podeMover={ctx.podeEditarOperacional} compacto limiteConcluidas={3} />
           ) : (
-            <p className="text-sm text-suave">Monte as etapas do acompanhamento para a cliente acompanhar aqui.</p>
+            <p className="text-sm text-suave">Cadastre as ações do acompanhamento para a cliente acompanhar aqui.</p>
           )}
-          {etapas.length > 0 && <CronogramaHorizontal etapas={etapas} />}
         </section>
       )}
 

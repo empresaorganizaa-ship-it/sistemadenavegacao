@@ -176,9 +176,16 @@ const FONTES: Fonte[] = [
   },
   {
     tabela: "etapas_acompanhamento",
-    colunas: "titulo",
+    colunas: "titulo, status",
     link: () => "/acompanhamento",
-    frase: (a, it) => `${a === "criou" ? "adicionou" : "atualizou"} no cronograma do acompanhamento: ${nomes(it, "titulo")}`,
+    frase: (a, it) => {
+      if (a === "criou") return `adicionou ${plural(it.length, "uma ação", "ações")} no cronograma: ${nomes(it, "titulo")}`;
+      const concluidas = it.filter((i) => i.status === "concluida");
+      if (concluidas.length === it.length) return `concluiu no cronograma: ${nomes(it, "titulo")}`;
+      const andamento = it.filter((i) => i.status === "andamento");
+      if (andamento.length === it.length) return `começou no cronograma: ${nomes(it, "titulo")}`;
+      return `moveu no cronograma: ${nomes(it, "titulo")}`;
+    },
   },
   {
     tabela: "anexos",

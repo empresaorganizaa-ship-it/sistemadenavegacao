@@ -84,9 +84,9 @@ export const STATUS_CAMPANHA: Opcao[] = [
 ];
 
 export const STATUS_ETAPA: Opcao[] = [
-  { valor: "proxima", rotulo: "Próxima" },
+  { valor: "proxima", rotulo: "A fazer" },
   { valor: "andamento", rotulo: "Em andamento" },
-  { valor: "concluida", rotulo: "Concluída" },
+  { valor: "concluida", rotulo: "Concluído" },
 ];
 
 export const STATUS_INDICACAO: Opcao[] = [
@@ -405,17 +405,17 @@ const E: Entidade[] = [
   {
     chave: "etapas_acompanhamento",
     tabela: "etapas_acompanhamento",
-    nome: "etapa do acompanhamento",
+    nome: "ação do cronograma",
     artigo: "a",
     permissao: "administrar",
     comentarios: true,
     campos: [
-      { chave: "titulo", rotulo: "Etapa", tipo: "texto", obrigatorio: true, placeholder: "Ex.: Diagnóstico comercial" },
-      { chave: "status", rotulo: "Status", tipo: "selecao", opcoes: STATUS_ETAPA, padrao: "proxima", meia: true },
-      { chave: "ordem", rotulo: "Ordem", tipo: "numero", meia: true },
-      { chave: "data_inicio", rotulo: "Início", tipo: "data", meia: true },
-      { chave: "data_fim", rotulo: "Fim", tipo: "data", meia: true },
-      { chave: "descricao", rotulo: "Descrição", tipo: "textoLongo" },
+      { chave: "titulo", rotulo: "Ação", tipo: "texto", obrigatorio: true, placeholder: "Ex.: Revisar os scripts de WhatsApp" },
+      { chave: "status", rotulo: "Coluna", tipo: "selecao", opcoes: STATUS_ETAPA, padrao: "proxima", meia: true },
+      { chave: "data_fim", rotulo: "Prazo", tipo: "data", meia: true },
+      { chave: "data_inicio", rotulo: "Começa em", tipo: "data", meia: true, ajuda: "Opcional" },
+      { chave: "ordem", rotulo: "Posição na coluna", tipo: "numero", meia: true, ajuda: "1 aparece primeiro" },
+      { chave: "descricao", rotulo: "Detalhes e orientações", tipo: "textoLongo" },
     ],
     campoTitulo: "titulo",
     lista: "/acompanhamento",

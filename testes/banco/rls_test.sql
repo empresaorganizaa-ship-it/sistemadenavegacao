@@ -154,6 +154,26 @@ insert into public.encontro_combinados (encontro_id, texto, workspace_id)
   select id, 'Novo combinado', :'ws_c' from public.encontros where titulo = 'Encontro 3';
 select pg_temp.esperar((select workspace_id from public.encontro_combinados where texto = 'Novo combinado') = :'ws_a', 'combinado fica no espaço do encontro (mesmo se informarem outro)');
 
+-- ---------- Cronograma em quadro ----------
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+select public.mover_etapa(id, 'concluida') from public.etapas_acompanhamento where workspace_id = :'ws_a' and status = 'andamento' limit 1;
+select pg_temp.esperar((select count(*) from public.etapas_acompanhamento where workspace_id = :'ws_a' and status = 'andamento') = 0, 'cliente move ação do cronograma para concluído');
+update public.etapas_acompanhamento set titulo = 'mudado pela cliente' where workspace_id = :'ws_a';
+select pg_temp.esperar((select count(*) from public.etapas_acompanhamento where titulo = 'mudado pela cliente') = 0, 'cliente não altera o texto das ações do cronograma');
+do $$ begin
+  perform public.mover_etapa((select id from public.etapas_acompanhamento limit 1), 'invalida');
+  raise exception 'FALHOU: aceitou coluna inválida';
+exception when raise_exception then
+  if sqlerrm like 'FALHOU%' then raise; end if;
+  raise notice 'ok - coluna inválida é recusada';
+end $$;
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000c');
+do $$ begin
+  perform public.mover_etapa((select id from public.etapas_acompanhamento limit 1), 'proxima');
+exception when others then null;
+end $$;
+select pg_temp.esperar((select count(*) from public.etapas_acompanhamento) = 0, 'cliente de outro espaço não vê o cronograma');
+
 -- ---------- Encerramento ----------
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
 update public.workspaces set status = 'acompanhamento_encerrado' where id = :'ws_a';
