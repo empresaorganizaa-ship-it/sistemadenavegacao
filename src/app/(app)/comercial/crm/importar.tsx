@@ -36,20 +36,25 @@ function textoCelula(v: Celula): string {
   return String(v);
 }
 
-async function lerArquivo(arquivo: File): Promise<Celula[][]> {
+type Aba = { nome: string; linhas: Celula[][] };
+
+async function lerArquivo(arquivo: File): Promise<Aba[]> {
   const nome = arquivo.name.toLowerCase();
   if (nome.endsWith(".xlsx")) {
-    const { readSheet } = await import("read-excel-file/browser");
-    return (await readSheet(arquivo)) as Celula[][];
+    const lerTudo = (await import("read-excel-file/browser")).default;
+    const abas = (await lerTudo(arquivo)) as { sheet: string; data: Celula[][] }[];
+    return abas.map((a) => ({ nome: a.sheet, linhas: a.data }));
   }
   if (nome.endsWith(".csv")) {
     const Papa = (await import("papaparse")).default;
     const texto = decodificarTexto(await arquivo.arrayBuffer());
     const r = Papa.parse<string[]>(texto, { skipEmptyLines: "greedy", delimitersToGuess: [";", ",", "\t", "|"] });
-    return r.data;
+    return [{ nome: arquivo.name, linhas: r.data }];
   }
   throw new Error("formato");
 }
+
+const semVazias = (linhas: Celula[][]) => linhas.filter((l) => l.some((c) => textoCelula(c).trim()));
 
 function dataBonita(iso: string | null, semAno = false) {
   if (!iso) return "";
@@ -62,6 +67,8 @@ export function ImportarPlanilha({ colunas, espaco }: { colunas: Coluna[]; espac
   const [aberta, setAberta] = useState(false);
   const [etapa, setEtapa] = useState<Etapa>("arquivo");
   const [arquivo, setArquivo] = useState("");
+  const [abas, setAbas] = useState<Aba[]>([]);
+  const [abaAtual, setAbaAtual] = useState(0);
   const [cabecalho, setCabecalho] = useState<string[]>([]);
   const [dados, setDados] = useState<Celula[][]>([]);
   const [mapa, setMapa] = useState<Mapeamento>({});
@@ -77,6 +84,8 @@ export function ImportarPlanilha({ colunas, espaco }: { colunas: Coluna[]; espac
   const recomecar = useCallback(() => {
     setEtapa("arquivo");
     setArquivo("");
+    setAbas([]);
+    setAbaAtual(0);
     setCabecalho([]);
     setDados([]);
     setMapa({});
@@ -96,13 +105,12 @@ export function ImportarPlanilha({ colunas, espaco }: { colunas: Coluna[]; espac
     setErro("");
     if (f.size > 10 * 1024 * 1024) return setErro("O arquivo pode ter no máximo 10 MB.");
     try {
-      const linhas = (await lerArquivo(f)).filter((l) => l.some((c) => textoCelula(c).trim()));
-      if (linhas.length < 2) return setErro("A planilha precisa ter uma linha de títulos e pelo menos uma linha com dados.");
-      const cab = linhas[0].map((c, i) => textoCelula(c).trim() || `Coluna ${i + 1}`);
+      const lidas = (await lerArquivo(f)).map((a) => ({ ...a, linhas: semVazias(a.linhas) })).filter((a) => a.linhas.length);
+      const primeira = lidas.findIndex((a) => a.linhas.length >= 2);
+      if (primeira < 0) return setErro("A planilha precisa ter uma linha de títulos e pelo menos uma linha com dados.");
       setArquivo(f.name);
-      setCabecalho(cab);
-      setDados(linhas.slice(1));
-      setMapa(sugerirMapeamento(cab));
+      setAbas(lidas);
+      usarAba(lidas, primeira);
       setEtapa("colunas");
     } catch (e) {
       setErro(
@@ -111,6 +119,16 @@ export function ImportarPlanilha({ colunas, espaco }: { colunas: Coluna[]; espac
           : "Não foi possível ler o arquivo. Confira se é uma planilha .xlsx ou .csv válida.",
       );
     }
+  }
+
+  function usarAba(lista: Aba[], i: number) {
+    const linhas = lista[i]?.linhas ?? [];
+    const cab = (linhas[0] ?? []).map((c, j) => textoCelula(c).trim() || `Coluna ${j + 1}`);
+    setAbaAtual(i);
+    setCabecalho(cab);
+    setDados(linhas.slice(1));
+    setMapa(sugerirMapeamento(cab));
+    setErro("");
   }
 
   const exemplo = (i: number | undefined) =>
@@ -206,6 +224,15 @@ export function ImportarPlanilha({ colunas, espaco }: { colunas: Coluna[]; espac
 
           {etapa === "colunas" && (
             <>
+              {abas.length > 1 && (
+                <div>
+                  <label htmlFor="imp-aba" className="rotulo">Aba da planilha</label>
+                  <select id="imp-aba" className="campo max-w-sm" value={abaAtual} onChange={(e) => usarAba(abas, Number(e.target.value))}>
+                    {abas.map((a, i) => <option key={i} value={i}>{a.nome} ({Math.max(0, a.linhas.length - 1)} linha(s))</option>)}
+                  </select>
+                  <p className="mt-1 text-[11px] text-suave">Esta planilha tem {abas.length} abas. Importe uma de cada vez.</p>
+                </div>
+              )}
               <p className="text-sm text-suave">
                 <strong className="text-texto">{arquivo}</strong>: {dados.length} linha(s). Ligue cada campo do CRM à coluna da planilha que tem essa informação. Os que não existirem na planilha podem ficar em &quot;Não importar&quot;.
               </p>

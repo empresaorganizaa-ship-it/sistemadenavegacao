@@ -118,7 +118,7 @@ test("importação: duplicadas", () => {
     [
       { ...base, linha: 2, nome: "Ana", whatsapp: "5511987654321" },
       { ...base, linha: 3, nome: "Bia", whatsapp: "5511900000000" },
-      { ...base, linha: 4, nome: "Bia de novo", whatsapp: "5511900000000" },
+      { ...base, linha: 4, nome: "BIA", whatsapp: "5511900000000" },
       { ...base, linha: 5, nome: "", whatsapp: "5511911111111" },
       { ...base, linha: 6, nome: "Sem telefone", whatsapp: null },
     ],
@@ -145,4 +145,32 @@ test("importação: sem WhatsApp compara pelo nome", () => {
     ["Paula  sem DDD"],
   );
   assert.deepEqual(r.map((x) => x.situacao), ["duplicada_crm", "importar", "duplicada_planilha"]);
+});
+
+test("importação: planilha com Telefone e Celular (e CPF ignorado)", () => {
+  const m = sugerirMapeamento(["Paciente", "Telefone", "Celular", "Documento"]);
+  assert.equal(m.nome, 0);
+  assert.equal(m.whatsapp, 2); // Celular
+  assert.equal(m.whatsapp_alt, 1); // Telefone
+  assert.equal(Object.values(m).includes(3), false); // Documento (CPF) não é ligado a nada
+  assert.equal(converterLinha(["Ana", null, "19999903882", "115"], m).dados.whatsapp, "5519999903882");
+  assert.equal(converterLinha(["Bia", "(19) 3333-4444", "", "1"], m).dados.whatsapp, "551933334444");
+  const r = converterLinha(["Cris", "19 98888-7777", "9999", "1"], m);
+  assert.equal(r.dados.whatsapp, "5519988887777");
+  assert.equal(r.avisos.length, 1);
+  assert.equal(normalizarTelefone("+55 19 99176 9890 "), "5519991769890");
+});
+
+test("importação: mesmo celular, pessoas diferentes", () => {
+  const base = { instagram: null, procedimento: null, data_procedimento: null, aniversario: null, observacoes: null };
+  const r = avaliar(
+    [
+      { ...base, linha: 2, nome: "Fernanda Reimberg", whatsapp: "5519900004554" },
+      { ...base, linha: 3, nome: "Julia Reimberg", whatsapp: "5519900004554" },
+      { ...base, linha: 4, nome: "fernanda reimberg", whatsapp: "5519900004554" },
+    ],
+    [],
+  );
+  assert.deepEqual(r.map((x) => x.situacao), ["importar", "importar", "duplicada_planilha"]);
+  assert.equal(r[1].avisos[0], "mesmo WhatsApp de Fernanda Reimberg");
 });

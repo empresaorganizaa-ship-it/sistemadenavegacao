@@ -6,7 +6,8 @@ export const ORIGEM_IMPORTACAO = "Importação – reativação";
 
 export const CAMPOS_IMPORTACAO = [
   { chave: "nome", rotulo: "Nome", obrigatorio: true, palpites: ["nome", "paciente", "cliente", "nome completo"] },
-  { chave: "whatsapp", rotulo: "WhatsApp", palpites: ["whatsapp", "whats", "zap", "telefone", "celular", "fone", "tel", "contato"] },
+  { chave: "whatsapp", rotulo: "WhatsApp", palpites: ["whatsapp", "whats", "zap", "celular", "cel", "telefone", "fone", "tel", "contato"] },
+  { chave: "whatsapp_alt", rotulo: "Telefone alternativo (usado se o WhatsApp estiver vazio)", palpites: ["telefone", "fone", "tel", "telefone fixo", "contato"] },
   { chave: "instagram", rotulo: "Instagram", palpites: ["instagram", "insta", "@", "perfil"] },
   { chave: "procedimento", rotulo: "Procedimento de interesse", palpites: ["procedimento", "interesse", "tratamento", "servico", "serviço"] },
   { chave: "data_procedimento", rotulo: "Data do último procedimento", palpites: ["ultimo procedimento", "último procedimento", "data do procedimento", "data procedimento", "ultima visita", "última visita", "data"] },
@@ -52,11 +53,15 @@ export function sugerirMapeamento(cabecalho: string[]): Mapeamento {
   for (const exato of [true, false]) {
     for (const campo of CAMPOS_IMPORTACAO) {
       if (m[campo.chave] !== undefined) continue;
-      const idx = cabecalho.findIndex((h, i) => {
-        if (usados.has(i)) return false;
-        const t = sem(String(h ?? ""));
-        return campo.palpites.some((p) => (exato ? t === sem(p) : t.includes(sem(p))));
-      });
+      let idx = -1;
+      for (const p of campo.palpites) {
+        idx = cabecalho.findIndex((h, i) => {
+          if (usados.has(i)) return false;
+          const t = sem(String(h ?? ""));
+          return exato ? t === sem(p) : t.includes(sem(p));
+        });
+        if (idx >= 0) break;
+      }
       if (idx >= 0) {
         m[campo.chave] = idx;
         usados.add(idx);
@@ -144,10 +149,20 @@ export function converterLinha(linha: Celula[], mapa: Mapeamento): { dados: Linh
   const pega = (c: ChaveCampo) => (mapa[c] === undefined ? undefined : linha[mapa[c]!]);
   const avisos: string[] = [];
 
-  const brutoTel = pega("whatsapp");
-  const whatsapp = normalizarTelefone(brutoTel);
-  if (brutoTel !== undefined && brutoTel !== null && String(brutoTel).trim() && !whatsapp)
-    avisos.push(`telefone "${String(brutoTel).trim()}" não reconhecido (sem DDD?)`);
+  const vazio = (v: Celula) => v === undefined || v === null || !String(v).trim();
+  let brutoTel = pega("whatsapp");
+  if (vazio(brutoTel)) brutoTel = pega("whatsapp_alt");
+  let whatsapp = normalizarTelefone(brutoTel);
+  if (!whatsapp && !vazio(pega("whatsapp_alt")) && brutoTel !== pega("whatsapp_alt")) {
+    // WhatsApp inválido: tenta o alternativo
+    const alt = normalizarTelefone(pega("whatsapp_alt"));
+    if (alt) {
+      avisos.push(`WhatsApp "${String(brutoTel).trim()}" não reconhecido; usado o telefone alternativo`);
+      whatsapp = alt;
+      brutoTel = pega("whatsapp_alt");
+    }
+  }
+  if (!vazio(brutoTel) && !whatsapp) avisos.push(`telefone "${String(brutoTel).trim()}" não reconhecido (sem DDD?)`);
 
   const brutoProc = pega("data_procedimento");
   const data_procedimento = lerData(brutoProc);
@@ -185,7 +200,7 @@ export function avaliar(
 ): LinhaAvaliada[] {
   const existentes = new Set(Array.from(whatsappsExistentes, (w) => normalizarTelefone(w)).filter(Boolean) as string[]);
   const nomes = new Set(Array.from(nomesExistentes, chaveNome).filter(Boolean));
-  const vistos = new Set<string>();
+  const vistos = new Map<string, { chave: string; nome: string }[]>(); // whatsapp -> quem já entrou com ele
   const nomesVistos = new Set<string>();
   return linhas.map((l) => {
     const avisos = [...(l.avisos ?? [])];
@@ -193,7 +208,11 @@ export function avaliar(
     let situacao: Situacao = "importar";
     if (!nome) situacao = "sem_nome";
     else if (l.whatsapp && existentes.has(l.whatsapp)) situacao = "duplicada_crm";
-    else if (l.whatsapp && vistos.has(l.whatsapp)) situacao = "duplicada_planilha";
+    else if (l.whatsapp && vistos.get(l.whatsapp)?.some((v) => v.chave === nome)) situacao = "duplicada_planilha";
+    else if (l.whatsapp && vistos.has(l.whatsapp)) {
+      // mesmo celular, outra pessoa (ex.: mãe e filha): importa, mas avisa
+      avisos.push(`mesmo WhatsApp de ${vistos.get(l.whatsapp)![0].nome}`);
+    }
     else if (!l.whatsapp && nomes.has(nome)) {
       situacao = "duplicada_crm";
       avisos.push("sem WhatsApp: já existe alguém com este nome no CRM");
@@ -202,7 +221,7 @@ export function avaliar(
       avisos.push("sem WhatsApp: nome repetido na planilha");
     }
     if (situacao === "importar") {
-      if (l.whatsapp) vistos.add(l.whatsapp);
+      if (l.whatsapp) vistos.set(l.whatsapp, [...(vistos.get(l.whatsapp) ?? []), { chave: nome, nome: l.nome }]);
       nomesVistos.add(nome);
     }
     return { ...l, situacao, avisos };
