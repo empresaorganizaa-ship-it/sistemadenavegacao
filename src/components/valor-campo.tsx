@@ -45,6 +45,8 @@ export function ValorCampo({ campo, valor, opcoes }: { campo: Campo; valor: unkn
     case "dinheiro":
       return <>{reais(Number(valor))}</>;
     case "data":
+      // aniversário importado sem ano fica guardado como 2000: mostra só dia/mês
+      if (campo.chave === "aniversario" && String(valor).startsWith("2000-")) return <>{data(String(valor)).slice(0, 5)}</>;
       return <>{data(String(valor))}</>;
     case "mes": {
       const [a, m] = String(valor).split("-").map(Number);

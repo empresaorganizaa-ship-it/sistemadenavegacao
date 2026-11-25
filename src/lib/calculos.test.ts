@@ -72,3 +72,77 @@ test("planilha CSV", () => {
   assert.equal(csv, '﻿Nome;Valor\r\n"Ana; Souza";1234,5\r\n\'=SOMA(A1);');
   assert.equal(dataBr("2026-03-12"), "12/03/2026");
 });
+
+import { normalizarTelefone, lerData, sugerirMapeamento, converterLinha, avaliar, decodificarTexto } from "./importacao.ts";
+
+test("importação: telefones", () => {
+  assert.equal(normalizarTelefone("(11) 98765-4321"), "5511987654321");
+  assert.equal(normalizarTelefone("+55 (21) 3456-7890"), "552134567890");
+  assert.equal(normalizarTelefone("011987654321"), "5511987654321");
+  assert.equal(normalizarTelefone(11987654321), "5511987654321");
+  assert.equal(normalizarTelefone("5511987654321"), "5511987654321");
+  assert.equal(normalizarTelefone("98765-4321"), null); // sem DDD
+  assert.equal(normalizarTelefone(""), null);
+});
+
+test("importação: datas", () => {
+  assert.equal(lerData("15/03/1990"), "1990-03-15");
+  assert.equal(lerData("5/3/90"), "1990-03-05");
+  assert.equal(lerData("2025-08-01"), "2025-08-01");
+  assert.equal(lerData(45000), "2023-03-15"); // série do Excel
+  assert.equal(lerData(new Date(Date.UTC(1988, 11, 25))), "1988-12-25");
+  assert.equal(lerData("31/02/2020"), null);
+  assert.equal(lerData("15/03"), null);
+  assert.equal(lerData("15/03", true), "2000-03-15");
+  assert.equal(lerData("ontem"), null);
+});
+
+test("importação: sugestão de colunas e conversão", () => {
+  const cab = ["Nome da paciente", "Celular", "Insta", "Último procedimento", "Data de nascimento", "Obs", "Procedimento"];
+  const m = sugerirMapeamento(cab);
+  assert.deepEqual(m, { nome: 0, whatsapp: 1, instagram: 2, procedimento: 6, data_procedimento: 3, aniversario: 4, observacoes: 5 });
+  const { dados, avisos } = converterLinha(["  Ana  Souza ", "(11) 98765-4321", "instagram.com/ana.souza", "10/01/2025", "15/03", "", "Toxina"], m);
+  assert.equal(dados.nome, "Ana Souza");
+  assert.equal(dados.whatsapp, "5511987654321");
+  assert.equal(dados.instagram, "@ana.souza");
+  assert.equal(dados.data_procedimento, "2025-01-10");
+  assert.equal(dados.aniversario, "2000-03-15");
+  assert.equal(dados.observacoes, null);
+  assert.equal(avisos.length, 0);
+  assert.equal(converterLinha(["Bia", "4321-1234"], { nome: 0, whatsapp: 1 }).avisos.length, 1);
+});
+
+test("importação: duplicadas", () => {
+  const base = { instagram: null, procedimento: null, data_procedimento: null, aniversario: null, observacoes: null };
+  const r = avaliar(
+    [
+      { ...base, linha: 2, nome: "Ana", whatsapp: "5511987654321" },
+      { ...base, linha: 3, nome: "Bia", whatsapp: "5511900000000" },
+      { ...base, linha: 4, nome: "Bia de novo", whatsapp: "5511900000000" },
+      { ...base, linha: 5, nome: "", whatsapp: "5511911111111" },
+      { ...base, linha: 6, nome: "Sem telefone", whatsapp: null },
+    ],
+    ["(11) 98765-4321"],
+  );
+  assert.deepEqual(r.map((x) => x.situacao), ["duplicada_crm", "importar", "duplicada_planilha", "sem_nome", "importar"]);
+});
+
+test("importação: CSV do Excel (Windows-1252)", () => {
+  const bytes = new Uint8Array([0x4a, 0xfa, 0x6c, 0x69, 0x61]); // "Júlia" em Windows-1252
+  assert.equal(decodificarTexto(bytes.buffer), "Júlia");
+  assert.equal(decodificarTexto(new TextEncoder().encode("﻿Júlia").buffer as ArrayBuffer), "Júlia");
+});
+
+test("importação: sem WhatsApp compara pelo nome", () => {
+  const base = { whatsapp: null, instagram: null, procedimento: null, data_procedimento: null, aniversario: null, observacoes: null };
+  const r = avaliar(
+    [
+      { ...base, linha: 2, nome: "Paula Sem DDD" },
+      { ...base, linha: 3, nome: "Tânia" },
+      { ...base, linha: 4, nome: "tania " },
+    ],
+    [],
+    ["Paula  sem DDD"],
+  );
+  assert.deepEqual(r.map((x) => x.situacao), ["duplicada_crm", "importar", "duplicada_planilha"]);
+});

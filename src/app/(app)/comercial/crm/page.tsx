@@ -7,6 +7,7 @@ import { SomenteLeitura, TituloPagina } from "@/components/ui";
 import { BotaoFormulario } from "@/components/formulario-entidade";
 import { MESES, hojeBrasil, inteiro, reais } from "@/lib/formatos";
 import { Kanban, type LeadCartao } from "./kanban";
+import { ImportarPlanilha } from "./importar";
 
 export const metadata = { title: "CRM" };
 
@@ -79,6 +80,7 @@ export default async function Crm({ searchParams }: { searchParams: Promise<Filt
           <>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download de arquivo */}
             <a href="/exportar/crm" className="botao-secundario"><Download className="size-4" /> Planilha</a>
+            {ctx.podeEditarOperacional && <ImportarPlanilha colunas={(colunas ?? []).map((c) => ({ id: c.id, nome: c.nome }))} espaco={ctx.workspace.nome} />}
             {ctx.podeEditarOperacional && (
               <BotaoFormulario
                 entidade="leads"
