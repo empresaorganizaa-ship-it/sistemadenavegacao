@@ -185,3 +185,41 @@ test("cadência de follow-up", () => {
   assert.equal(c.faltam, -1);
   assert.equal(cadencia("2026-11-20", [1, 2, 3, 4, 5, 6], "2026-12-30").completo, true);
 });
+
+import { proximoContato, periodoContato, dentroDoPeriodo, temProcedimento } from "./filtros-crm.ts";
+
+test("filtros do CRM", () => {
+  assert.equal(proximoContato("2026-11-30", "2026-11-28"), "2026-11-28");
+  assert.equal(proximoContato(null, "2026-11-28"), "2026-11-28");
+  assert.equal(proximoContato(null, null), null);
+  assert.deepEqual(periodoContato({ cont: "atrasados" }, "2026-11-26"), { ate: "2026-11-25" });
+  assert.deepEqual(periodoContato({ cont: "7dias" }, "2026-11-26"), { de: "2026-11-26", ate: "2026-12-02" });
+  assert.deepEqual(periodoContato({ cont_de: "2026-12-01", cont_ate: "lixo" }, "2026-11-26"), { de: "2026-12-01", ate: undefined });
+  assert.equal(periodoContato({}, "2026-11-26"), null);
+  assert.equal(dentroDoPeriodo("2026-11-26", { de: "2026-11-26", ate: "2026-11-26" }), true);
+  assert.equal(dentroDoPeriodo(null, { de: "2026-11-26" }), false);
+  const nomes = { s1: "Toxina botulínica" };
+  assert.equal(temProcedimento({ servico_id: null, procedimento_texto: "toxina BOTULINICA" }, "s:s1", nomes), true);
+  assert.equal(temProcedimento({ servico_id: "s1", procedimento_texto: null }, "s:s1", nomes), true);
+  assert.equal(temProcedimento({ servico_id: null, procedimento_texto: "Botox" }, "t:botox", nomes), true);
+  assert.equal(temProcedimento({ servico_id: null, procedimento_texto: "Botox" }, "s:s1", nomes), false);
+});
+
+test("importação: CPF não vira telefone", () => {
+  assert.equal(normalizarTelefone("12345678909"), null); // 11 dígitos sem o 9 do celular
+  assert.equal(normalizarTelefone("05142609638"), null);
+  assert.equal(normalizarTelefone("74999913412"), "5574999913412"); // celular da Bahia
+  assert.equal(normalizarTelefone("1933334444"), "551933334444"); // fixo
+});
+
+import { mesmaPessoa } from "./importacao.ts";
+
+test("importação: mesma pessoa com nome abreviado", () => {
+  assert.equal(mesmaPessoa("Melissa Nara", "MELISSA NARA PESCONI MELLO"), true);
+  assert.equal(mesmaPessoa("Fernanda Pigaiani Reimberg", "Julia Pigaiani Reimberg"), false);
+  assert.equal(mesmaPessoa("Ana", "Ana Souza"), true);
+  assert.equal(mesmaPessoa("Ana Lima", "Ana Souza"), false);
+  const base = { instagram: null, procedimento: null, data_procedimento: null, aniversario: null, observacoes: null };
+  const r = avaliar([{ ...base, linha: 2, nome: "MELISSA NARA PESCONI MELLO", whatsapp: "5519991769890" }, { ...base, linha: 3, nome: "Melissa Nara", whatsapp: "5519991769890" }], []);
+  assert.deepEqual(r.map((x) => x.situacao), ["importar", "duplicada_planilha"]);
+});

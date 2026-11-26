@@ -29,6 +29,18 @@ export type LinhaImportada = {
   observacoes: string | null;
 };
 
+/**
+ * Parece a mesma pessoa? Mesmo primeiro nome e um nome "contido" no outro
+ * (ex.: "Melissa Nara" e "Melissa Nara Pesconi Mello").
+ */
+export function mesmaPessoa(a: string, b: string): boolean {
+  const ta = chaveNome(a).split(" ").filter((p) => p.length > 1);
+  const tb = chaveNome(b).split(" ").filter((p) => p.length > 1);
+  if (!ta.length || !tb.length || ta[0] !== tb[0]) return false;
+  const [menor, maior] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  return menor.every((p) => maior.includes(p));
+}
+
 export type Situacao = "importar" | "duplicada_crm" | "duplicada_planilha" | "sem_nome";
 
 /** Nome sem acentos, maiúsculas ou espaços extras (para comparar quem não tem WhatsApp). */
@@ -79,10 +91,19 @@ export function normalizarTelefone(valor: Celula): string | null {
   if (valor === null || valor === undefined || valor === "") return null;
   let n = typeof valor === "number" ? Math.round(valor).toString() : String(valor);
   n = n.replace(/\D/g, "");
-  n = n.replace(/^0+/, ""); // 011..., 0xx...
-  if ((n.length === 12 || n.length === 13) && n.startsWith("55")) return n;
-  if (n.length === 10 || n.length === 11) return "55" + n;
-  return null;
+  if (n.startsWith("0")) {
+    // "0 + DDD + celular" (ex.: 011 98765-4321). Com zero na frente e outro formato,
+    // costuma ser CPF ou documento: não aceita.
+    const sem0 = n.replace(/^0+/, "");
+    if (!(sem0.length === 11 && sem0[2] === "9")) return null;
+    n = sem0;
+  }
+  if ((n.length === 12 || n.length === 13) && n.startsWith("55")) n = n.slice(2);
+  if (n.length !== 10 && n.length !== 11) return null;
+  // DDD válido (11 a 99) e, com 11 dígitos, celular começa com 9 (evita confundir com CPF)
+  if (!/^[1-9][1-9]/.test(n)) return null;
+  if (n.length === 11 && n[2] !== "9") return null;
+  return "55" + n;
 }
 
 function iso(a: number, m: number, d: number): string | null {
@@ -208,7 +229,7 @@ export function avaliar(
     let situacao: Situacao = "importar";
     if (!nome) situacao = "sem_nome";
     else if (l.whatsapp && existentes.has(l.whatsapp)) situacao = "duplicada_crm";
-    else if (l.whatsapp && vistos.get(l.whatsapp)?.some((v) => v.chave === nome)) situacao = "duplicada_planilha";
+    else if (l.whatsapp && vistos.get(l.whatsapp)?.some((v) => v.chave === nome || mesmaPessoa(v.nome, l.nome))) situacao = "duplicada_planilha";
     else if (l.whatsapp && vistos.has(l.whatsapp)) {
       // mesmo celular, outra pessoa (ex.: mãe e filha): importa, mas avisa
       avisos.push(`mesmo WhatsApp de ${vistos.get(l.whatsapp)![0].nome}`);
