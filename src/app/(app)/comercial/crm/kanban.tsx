@@ -16,6 +16,7 @@ export type LeadCartao = {
   valor: number | null;
   proxima_acao: string | null;
   proxima_acao_data: string | null;
+  followup: { feitos: number; proximo: number | null; data: string | null; situacao: string } | null;
 };
 type Coluna = { id: string; nome: string; tipo: string };
 
@@ -48,6 +49,25 @@ function Cartao({ l, colunas, podeEditar, hoje, mover }: { l: LeadCartao; coluna
         <p className={`mt-2 rounded-lg px-2 py-1 text-xs ${atrasada ? "bg-erro/10 text-erro" : ehHoje ? "bg-alerta/10 text-alerta" : "bg-superficie-2"}`}>
           {l.proxima_acao}
           {l.proxima_acao_data && <span className="font-medium"> · {ehHoje ? "hoje" : fData(l.proxima_acao_data).slice(0, 5)}</span>}
+        </p>
+      )}
+      {l.followup && (
+        <p
+          className={`mt-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs ${
+            l.followup.situacao === "atrasado" ? "bg-erro/10 text-erro" : l.followup.situacao === "hoje" ? "bg-alerta/10 text-alerta" : "bg-superficie-2 text-suave"
+          }`}
+        >
+          <span className="font-medium">{l.followup.proximo ? `Follow ${l.followup.proximo}/6` : "Follow-up completo ✓"}</span>
+          {l.followup.data && (
+            <span>
+              {l.followup.situacao === "hoje" ? "hoje" : l.followup.situacao === "atrasado" ? `atrasado · ${fData(l.followup.data).slice(0, 5)}` : fData(l.followup.data).slice(0, 5)}
+            </span>
+          )}
+          <span className="flex gap-0.5" aria-label={`${l.followup.feitos} de 6 follow-ups feitos`}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <span key={i} className={`size-1.5 rounded-full ${i < l.followup!.feitos ? "bg-destaque" : "bg-borda"}`} />
+            ))}
+          </span>
         </p>
       )}
       {podeEditar && (

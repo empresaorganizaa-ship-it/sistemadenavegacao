@@ -174,3 +174,14 @@ test("importação: mesmo celular, pessoas diferentes", () => {
   assert.deepEqual(r.map((x) => x.situacao), ["importar", "importar", "duplicada_planilha"]);
   assert.equal(r[1].avisos[0], "mesmo WhatsApp de Fernanda Reimberg");
 });
+
+import { cadencia } from "./followup.ts";
+
+test("cadência de follow-up", () => {
+  const c = cadencia("2026-11-20", [1], "2026-11-26");
+  assert.deepEqual(c.etapas.map((e) => e.data), ["2026-11-22", "2026-11-25", "2026-11-27", "2026-11-30", "2026-12-05", "2026-12-20"]);
+  assert.deepEqual(c.etapas.map((e) => e.situacao), ["feito", "atrasado", "futuro", "futuro", "futuro", "futuro"]);
+  assert.equal(c.proximo?.etapa, 2);
+  assert.equal(c.faltam, -1);
+  assert.equal(cadencia("2026-11-20", [1, 2, 3, 4, 5, 6], "2026-12-30").completo, true);
+});

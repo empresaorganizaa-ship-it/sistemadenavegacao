@@ -8,6 +8,7 @@ import { BotaoFormulario } from "@/components/formulario-entidade";
 import { MESES, hojeBrasil, inteiro, reais } from "@/lib/formatos";
 import { Kanban, type LeadCartao } from "./kanban";
 import { ImportarPlanilha } from "./importar";
+import { cadencia } from "@/lib/followup";
 
 export const metadata = { title: "CRM" };
 
@@ -25,7 +26,7 @@ export default async function Crm({ searchParams }: { searchParams: Promise<Filt
 
   let consulta = supabase
     .from("leads")
-    .select("id, nome, whatsapp, coluna_id, origem_id, servico_id, procedimento_texto, valor_orcamento, valor_fechado, proxima_acao, proxima_acao_data, data_entrada, updated_at")
+    .select("id, nome, whatsapp, coluna_id, origem_id, servico_id, procedimento_texto, valor_orcamento, valor_fechado, proxima_acao, proxima_acao_data, data_entrada, followup_inicio, updated_at")
     .eq("workspace_id", ctx.workspace.id)
     .order("updated_at", { ascending: false })
     .limit(1000);
@@ -54,6 +55,14 @@ export default async function Crm({ searchParams }: { searchParams: Promise<Filt
   };
 
   const nomeServico = Object.fromEntries((opcoes.servicos ?? []).map((o) => [o.valor, o.rotulo]));
+
+  // cadência de follow-up de quem está com ela iniciada
+  const comCadencia = (leads ?? []).filter((l) => l.followup_inicio).map((l) => l.id);
+  const feitosPorLead: Record<string, number[]> = {};
+  for (let i = 0; i < comCadencia.length; i += 300) {
+    const { data: fs } = await supabase.from("lead_followups").select("lead_id, etapa").in("lead_id", comCadencia.slice(i, i + 300));
+    for (const f of fs ?? []) (feitosPorLead[f.lead_id] ??= []).push(f.etapa);
+  }
   const cartoes: LeadCartao[] = (leads ?? []).map((l) => ({
     id: l.id,
     nome: l.nome,
@@ -63,6 +72,12 @@ export default async function Crm({ searchParams }: { searchParams: Promise<Filt
     valor: l.valor_fechado ?? l.valor_orcamento,
     proxima_acao: l.proxima_acao,
     proxima_acao_data: l.proxima_acao_data,
+    followup: l.followup_inicio
+      ? (() => {
+          const c = cadencia(l.followup_inicio, feitosPorLead[l.id] ?? [], hoje.iso);
+          return { feitos: c.feitos, proximo: c.proximo?.etapa ?? null, data: c.proximo?.data ?? null, situacao: c.proximo?.situacao ?? "feito" };
+        })()
+      : null,
   }));
 
   const filtrando = Boolean(f.mes || f.origem || f.servico || f.q);

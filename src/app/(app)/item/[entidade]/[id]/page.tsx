@@ -12,6 +12,8 @@ import { Comentarios } from "@/components/comentarios";
 import { Anexos } from "@/components/anexos";
 import { linkWhatsapp } from "@/lib/whatsapp";
 import { marcarLido } from "@/lib/leituras";
+import { CadenciaFollowup } from "@/components/cadencia-followup";
+import { hojeBrasil } from "@/lib/formatos";
 
 export default async function Detalhe({ params }: { params: Promise<{ entidade: string; id: string }> }) {
   const { entidade, id } = await params;
@@ -86,6 +88,17 @@ export default async function Detalhe({ params }: { params: Promise<{ entidade: 
           <ValorCampo campo={c} valor={registro[c.chave]} opcoes={opcoes} />
         </section>
       ))}
+
+      {entidade === "leads" && (
+        <CadenciaFollowup
+          leadId={id}
+          inicio={registro.followup_inicio}
+          feitos={((await supabase.from("lead_followups").select("etapa").eq("lead_id", id)).data ?? []).map((f) => f.etapa)}
+          hoje={hojeBrasil().iso}
+          podeEditar={ctx.podeEditarOperacional}
+          linkWhats={zap}
+        />
+      )}
 
       {ent.anexos && <Anexos entidade={entidade} registroId={id} />}
       {ent.comentarios && <Comentarios entidade={entidade} registroId={id} />}

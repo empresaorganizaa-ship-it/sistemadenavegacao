@@ -174,6 +174,22 @@ exception when others then null;
 end $$;
 select pg_temp.esperar((select count(*) from public.etapas_acompanhamento) = 0, 'cliente de outro espaço não vê o cronograma');
 
+-- ---------- Cadência de follow-up ----------
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+update public.leads set coluna_id = (select id from public.crm_colunas where workspace_id = :'ws_a' and tipo = 'followup')
+  where workspace_id = :'ws_a' and nome = 'Lead da Ana';
+select pg_temp.esperar((select followup_inicio from public.leads where nome = 'Lead da Ana') = public.hoje_br(), 'entrar na coluna Follow-up inicia a cadência');
+insert into public.lead_followups (lead_id, etapa, workspace_id) select id, 1, :'ws_c' from public.leads where nome = 'Lead da Ana';
+select pg_temp.esperar((select workspace_id from public.lead_followups limit 1) = :'ws_a', 'follow-up fica no espaço da paciente');
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000c');
+select pg_temp.esperar((select count(*) from public.lead_followups) = 0, 'cliente de outro espaço não vê os follow-ups');
+do $$ begin
+  insert into public.lead_followups (lead_id, etapa) select id, 2 from public.leads limit 1;
+exception when others then null;
+end $$;
+select pg_temp.entrar('00000000-0000-0000-0000-00000000000b');
+select pg_temp.esperar((select count(*) from public.lead_followups) = 1, 'ninguém de fora marca follow-up da paciente');
+
 -- ---------- Encerramento ----------
 select pg_temp.entrar('00000000-0000-0000-0000-00000000000a');
 update public.workspaces set status = 'acompanhamento_encerrado' where id = :'ws_a';

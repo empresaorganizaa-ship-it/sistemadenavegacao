@@ -39,6 +39,17 @@ const nomes = (itens: Linha[], campo: string) => {
 
 const FONTES: Fonte[] = [
   {
+    tabela: "lead_followups",
+    colunas: "etapa, lead_id, leads (nome)",
+    link: (r) => `/item/leads/${r.lead_id}`,
+    frase: (_, it) => {
+      const nomeDe = (i: Linha) => (i.leads as { nome?: string } | null)?.nome ?? "paciente";
+      if (it.length === 1) return `fez o follow ${it[0].etapa} de ${nomeDe(it[0])}`;
+      const ns = Array.from(new Set(it.map(nomeDe)));
+      return `fez ${it.length} follow-ups (${ns.length <= 2 ? ns.join(" e ") : `${ns.slice(0, 2).join(", ")} e mais ${ns.length - 2}`})`;
+    },
+  },
+  {
     tabela: "encontros",
     colunas: "titulo",
     link: (r) => `/encontros/${r.id}`,
@@ -206,6 +217,7 @@ const FONTES: Fonte[] = [
 
 // página da lista, quando o grupo tem vários itens
 const LISTA: Record<string, string> = {
+  lead_followups: "/comercial/crm",
   encontros: "/encontros",
   encontro_combinados: "/encontros",
   leads: "/comercial/crm",

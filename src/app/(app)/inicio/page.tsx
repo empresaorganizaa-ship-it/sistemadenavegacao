@@ -14,6 +14,7 @@ import { diasEntre, somarDias } from "@/lib/periodos";
 import { linkWhatsapp } from "@/lib/whatsapp";
 import { MessageCircle } from "lucide-react";
 import { carregarAtividade } from "@/lib/atividade";
+import { cadencia } from "@/lib/followup";
 
 export const metadata = { title: "Início" };
 
@@ -44,6 +45,22 @@ export default async function Inicio() {
   const ciclo = cicloRaw as MetaCiclo | null;
   const hojeIso = hoje.iso;
   const ws = ctx.workspace.id;
+
+  // follow-ups vencendo hoje ou atrasados
+  const { data: comCadencia } = await supabase
+    .from("leads")
+    .select("id, nome, whatsapp, followup_inicio, crm_colunas (tipo), lead_followups (etapa)")
+    .eq("workspace_id", ctx.workspace.id)
+    .not("followup_inicio", "is", null)
+    .limit(1000);
+  const followsHoje = (comCadencia ?? [])
+    .filter((l) => {
+      const t = (l.crm_colunas as unknown as { tipo: string } | null)?.tipo;
+      return t !== "ganho" && t !== "perdido";
+    })
+    .map((l) => ({ ...l, c: cadencia(l.followup_inicio!, ((l.lead_followups ?? []) as { etapa: number }[]).map((f) => f.etapa), hoje.iso) }))
+    .filter((l) => l.c.proximo && l.c.proximo.data <= hoje.iso)
+    .sort((a, b) => a.c.proximo!.data.localeCompare(b.c.proximo!.data));
 
   const [{ data: encontrosRec }, { data: combinadosPend }] = await Promise.all([
     supabase.from("encontros").select("id, titulo, data, created_by, updated_at").eq("workspace_id", ctx.workspace.id).order("updated_at", { ascending: false }).limit(6),
@@ -244,6 +261,25 @@ export default async function Inicio() {
               );
             })}
             {pendentesCrm.length > 6 && <li><Link href="/comercial/crm" className="text-xs text-destaque-escuro underline underline-offset-4">e mais {pendentesCrm.length - 6} no CRM</Link></li>}
+            {followsHoje.slice(0, 8).map((l) => {
+              const atrasado = l.c.proximo!.situacao === "atrasado";
+              const zap = linkWhatsapp(l.whatsapp);
+              return (
+                <li key={`fu-${l.id}`} className="flex items-start gap-2">
+                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${atrasado ? "bg-erro" : "bg-alerta"}`} />
+                  <span className="min-w-0 flex-1">
+                    <Link href={`/item/leads/${l.id}`} className="hover:text-destaque-escuro">
+                      <strong className="font-medium">{l.nome}</strong>: follow {l.c.proximo!.etapa} de 6
+                    </Link>
+                    <span className={`text-xs ${atrasado ? "text-erro" : "text-suave"}`}> ({atrasado ? `atrasado desde ${fData(l.c.proximo!.data).slice(0, 5)}` : "hoje"})</span>
+                  </span>
+                  {zap && <a href={zap} target="_blank" rel="noopener noreferrer" className="shrink-0 text-sucesso" aria-label={`WhatsApp de ${l.nome}`}><MessageCircle className="size-4" /></a>}
+                </li>
+              );
+            })}
+            {followsHoje.length > 8 && (
+              <li><Link href="/comercial/crm" className="text-xs text-destaque-escuro underline underline-offset-4">e mais {followsHoje.length - 8} follow-up(s) no CRM</Link></li>
+            )}
             {(combinadosPend ?? []).map((c) => {
               const atrasado = c.prazo! < hojeIso;
               return (
@@ -286,7 +322,7 @@ export default async function Inicio() {
                 </Link>
               </li>
             )}
-            {!pendentesCrm.length && !combinadosPend?.length && !rotinaPendente && !retornos.length && !aniversariantes.length && !conteudosHoje?.length && (
+            {!pendentesCrm.length && !followsHoje.length && !combinadosPend?.length && !rotinaPendente && !retornos.length && !aniversariantes.length && !conteudosHoje?.length && (
               <li className="text-suave">Tudo em dia por hoje. ✨</li>
             )}
           </ul>
